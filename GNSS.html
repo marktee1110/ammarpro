@@ -1,198 +1,87 @@
 <!doctype html>
-
 <html lang="ar" dir="ltr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />  <title>🛰️ GNSS Live Ammar PRO - م. عمار يوسف</title>  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate.min.js"></script>  <script src="https://unpkg.com/localforage@1.10.0/dist/localforage.min.js"></script>  <script src="https://unpkg.com/leaflet.offline@2.2.0/dist/leaflet.offline.min.js"></script>  <style>
-    :root {
-      --main:#4f46e5;
-      --danger:#dc2626;
-      --ok:#16a34a;
-      --bg:#0f172a;
-      --border:#000000;
-    }
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>🛰️ GNSS Live Ammar PRO - م. عمار يوسف</title>
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont,
-                   "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: #000;
-      direction: ltr;
-      text-align: left;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate.min.js"></script>
+  <script src="https://unpkg.com/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="https://unpkg.com/leaflet.offline@2.2.0/dist/leaflet.offline.min.js"></script>
 
+  <style>
+    :root{--main:#4f46e5;--danger:#dc2626;--ok:#16a34a;--bg:#0f172a;--border:#000000}
+    body, html {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: #000; direction: ltr; text-align: left;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    
     header {
-      background: #0f172a;
-      color: #fff;
-      padding: 6px 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-      border-bottom: 2px solid #000;
-      z-index: 1001;
+      background: #0f172a; color: #fff; padding: 6px 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      flex-shrink: 0; border-bottom: 2px solid #000; z-index: 1001;
     }
-
     .header-title {
-      font-size: 13px;
-      font-weight: 900;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: #38bdf8;
+      font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #38bdf8;
     }
-
     .btn-nav-home {
-      color: #fff;
-      text-decoration: none;
-      font-size: 11px;
-      font-weight: bold;
-      background: rgba(255,255,255,0.15);
-      padding: 5px 9px;
-      border-radius: 6px;
-      white-space: nowrap;
-      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff; text-decoration: none; font-size: 11px; font-weight: bold;
+      background: rgba(255,255,255,0.15); padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; border: 1px solid rgba(255,255,255,0.3);
     }
 
     #mapWrapper {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      position: relative;
-      min-height: 0;
+      flex: 1; width: 100%; height: 100%; position: relative; min-height: 0;
     }
-
     #satMapContainer {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1;
+      width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
     }
 
     .floating-panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      z-index: 1000;
-      background: #ffffff;
-      border: 3px solid #000000;
-      border-radius: 8px;
-      padding: 6px 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
+      background: #ffffff; border: 3px solid #000000;
+      border-radius: 8px; padding: 6px 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
     }
-
+    
     .top-info-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0f172a;
-      color: #38bdf8;
-      padding: 4px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 900;
-      margin-bottom: 5px;
-      border: 1px solid #000;
+      display: flex; justify-content: space-between; align-items: center;
+      background: #0f172a; color: #38bdf8; padding: 4px 6px; border-radius: 4px;
+      font-size: 11px; font-weight: 900; margin-bottom: 5px; border: 1px solid #000;
     }
-
-    .top-info-bar span {
-      color: #10b981;
-    }
+    .top-info-bar span { color: #10b981; }
 
     .main-content-layout {
-      display: flex;
-      gap: 6px;
-      align-items: center;
+      display: flex; gap: 6px; align-items: center;
     }
 
     .coords-vertical-group {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      flex: 1; display: flex; flex-direction: column; gap: 4px;
     }
-
     .coord-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 16px;
-      font-weight: 900;
-      font-family: monospace;
-      background: #f8fafc;
-      padding: 3px 6px;
-      border-radius: 5px;
-      border: 1.5px solid #000;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 16px; font-weight: 900; font-family: monospace;
+      background: #f8fafc; padding: 3px 6px; border-radius: 5px; border: 1.5px solid #000;
     }
-
-    .coord-label {
-      color: #000000;
-      font-size: 15px;
-      margin-right: 4px;
-    }
-
-    .coord-val {
-      color: #dc2626;
-      flex: 1;
-      text-align: left;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .coord-val.fix {
-      color: #16a34a;
-    }
+    .coord-label { color: #000000; font-size: 15px; margin-right: 4px; }
+    .coord-val { color: #dc2626; flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .coord-val.fix { color: #16a34a; }
 
     .action-buttons-col {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-self: stretch;
-      justify-content: center;
+      display: flex; flex-direction: column; gap: 4px; align-self: stretch; justify-content: center;
     }
-
     .btn-action {
-      background: #0284c7;
-      color: #fff;
-      border: 2px solid #000000;
-      border-radius: 5px;
-      padding: 3px 8px;
-      font-size: 11px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      white-space: nowrap;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      background: #0284c7; color: #fff; border: 2px solid #000000; border-radius: 5px;
+      padding: 3px 8px; font-size: 11px; font-weight: 900; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
-
-    .btn-action.avg {
-      background: #16a34a;
-    }
-
-    .btn-action.avg.active {
-      background: #dc2626;
-      animation: pulse 1s infinite;
-    }
-
-    .btn-action:active {
-      transform: scale(0.95);
-    }
+    .btn-action.avg { background: #16a34a; }
+    .btn-action.avg.active { background: #dc2626; animation: pulse 1s infinite; }
+    .btn-action:active { transform: scale(0.95); }
 
     @keyframes pulse {
       0% { opacity: 1; }
@@ -201,1282 +90,383 @@
     }
 
     .map-fab-container {
-      position: absolute;
-      bottom: 25px;
-      right: 20px;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: center;
+      position: absolute; bottom: 25px; right: 20px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
     }
-
     .fab-btn {
-      background: #ffffff;
-      border: 3px solid #000;
-      border-radius: 50%;
-      width: 52px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      cursor: pointer;
+      background: #ffffff; border: 3px solid #000; border-radius: 50%;
+      width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer;
     }
-
-    .fab-btn:active {
-      transform: scale(0.92);
-    }
-
-    .fab-btn svg {
-      width: 26px;
-      height: 26px;
-      fill: #000;
-    }
-
-    .fab-btn.active svg {
-      fill: #1a73e8;
-    }
-
+    .fab-btn:active { transform: scale(0.92); }
+    .fab-btn svg { width: 26px; height: 26px; fill: #000; }
+    .fab-btn.active svg { fill: #1a73e8; }
+    
     .north-compass-btn {
-      background: #ffffff;
-      border: 3px solid #000;
-      border-radius: 50%;
-      width: 52px;
-      height: 52px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      cursor: pointer;
-      font-weight: 900;
-      font-size: 11px;
-      color: #000;
+      background: #ffffff; border: 3px solid #000; border-radius: 50%;
+      width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; font-weight: 900; font-size: 11px; color: #000;
     }
-
     .north-compass-arrow {
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-bottom: 20px solid #dc2626;
-      margin-bottom: 2px;
-      transition: transform 0.1s linear;
+      width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-bottom: 20px solid #dc2626; margin-bottom: 2px; transition: transform 0.1s linear;
     }
 
     .user-loc-pulse {
-      width: 20px;
-      height: 20px;
-      background-color: #1a73e8;
-      border-radius: 50%;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 14px rgba(26,115,232,0.9);
+      width: 20px; height: 20px; background-color: #1a73e8; border-radius: 50%;
+      border: 3px solid #ffffff; box-shadow: 0 0 14px rgba(26,115,232,0.9);
     }
-  </style></head><body><header>
-  <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>  <div class="header-title">
-    🛰️ GNSS Live (نظام عمار المساحي X, Y)
-  </div>
-</header><div id="mapWrapper">  <div id="satMapContainer"></div>  <div class="floating-panel"><div class="top-info-bar">
+  </style>
+</head>
+<body>
 
-  <span>
-    🛰️ GPS:
-    <b id="satCount">WAIT</b>
-  </span>
+<header>
+  <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>
+  <div class="header-title">🛰️ GNSS Live (إحداثيات X, Y المحلية فقط)</div>
+</header>
 
-  <span>
-    Z:
-    <b id="liveAlt">-</b>
-  </span>
+<div id="mapWrapper">
+  <div id="satMapContainer"></div>
 
-  <span>
-    Acc:
-    <b id="liveAcc">-</b>
-  </span>
-
-</div>
-
-<div class="main-content-layout">
-
-  <div class="coords-vertical-group">
-
-    <div class="coord-box">
-      <span class="coord-label">X:</span>
-      <span class="coord-val fix" id="liveX">--</span>
+  <div class="floating-panel">
+    <div class="top-info-bar">
+      <span>🛰️ Sats: <b id="satCount">32/40</b></span>
+      <span>Z: <b id="liveAlt">-</b></span>
+      <span>Acc: <b id="liveAcc">-</b></span>
     </div>
 
-    <div class="coord-box">
-      <span class="coord-label">Y:</span>
-      <span class="coord-val fix" id="liveY">--</span>
+    <div class="main-content-layout">
+      <div class="coords-vertical-group">
+        <div class="coord-box">
+          <span class="coord-label">X:</span>
+          <span class="coord-val fix" id="liveX">--</span>
+        </div>
+        <div class="coord-box">
+          <span class="coord-label">Y:</span>
+          <span class="coord-val fix" id="liveY">--</span>
+        </div>
+      </div>
+      
+      <div class="action-buttons-col">
+        <button class="btn-action avg" id="btnAvg" onclick="toggleAveraging()">🎯 رصد دقيق</button>
+        <button class="btn-action" onclick="speakCurrentCoordinates()">🔊 نطق</button>
+      </div>
     </div>
-
   </div>
 
-  <div class="action-buttons-col">
-
-    <button
-      class="btn-action avg"
-      id="btnAvg"
-      onclick="toggleAveraging()">
-      🎯 رصد دقيق
+  <div class="map-fab-container">
+    <div class="north-compass-btn" onclick="resetMapNorth()" title="إعادة الاتجاه للشمال">
+      <div class="north-compass-arrow" id="compassArrow"></div>
+      <span style="font-size:10px; font-weight:900;">N</span>
+    </div>
+    <button class="fab-btn active" id="gpsToggle" onclick="centerToUser()" title="تمركز على موقعي">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      </svg>
     </button>
-
-    <button
-      class="btn-action"
-      onclick="speakCurrentCoordinates()">
-      🔊 نطق
-    </button>
-
   </div>
-
 </div>
 
-  </div>  <div class="map-fab-container"><div
-  class="north-compass-btn"
-  onclick="resetMapNorth()"
-  title="إعادة الاتجاه للشمال">
+<script>
+  let satMap = null;
+  let satTileLayer = null;
+  let userMarker = null;
+  let accuracyCircle = null;
+  let watchId = null;
+  let isFirstGPS = true;
+  let currentUserLatLng = null;
+  let lastXStr = "--", lastYStr = "--";
 
-  <div
-    class="north-compass-arrow"
-    id="compassArrow">
-  </div>
+  let isAveraging = false;
+  let avgReadings = [];
+  const TARGET_READINGS = 30;
+  let avgTimeoutTimer = null;
 
-  <span style="font-size:10px;font-weight:900;">
-    N
-  </span>
+  // محرك عمار الأمامي
+  function ammar_engine_transform(rawX, rawY) {
+    const x = -Math.abs(parseFloat(rawX));
+    const y = Math.abs(parseFloat(rawY));
 
-</div>
+    const x2 = x / 100000.0;
+    const y2 = y / 100000.0;
 
-<button
-  class="fab-btn active"
-  id="gpsToggle"
-  onclick="centerToUser()"
-  title="تمركز على موقعي">
+    const lat = (
+      34.1995728022708
+      + (-0.000109034258955 * x2)
+      + (0.901919449198777 * y2)
+      + (-0.004804938821993 * Math.pow(x2, 2))
+      + (-0.0000092638803 * x2 * y2)
+      + (-0.0000619942778 * Math.pow(y2, 2))
+      + (-0.0000023827326 * Math.pow(x2, 3))
+      + (-0.0001079065784 * Math.pow(x2, 2) * y2)
+      + (0.0000045190021 * x2 * Math.pow(y2, 2))
+      + (-0.0000188294226 * Math.pow(y2, 3))
+    );
 
-  <svg viewBox="0 0 24 24">
-    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06A8.994 8.994 0 0 0 12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-  </svg>
+    const lon = (
+      39.1511562415421
+      + (1.08544552373339 * x2)
+      + (0.000141152839858 * y2)
+      + (-0.0000227915953 * Math.pow(x2, 2))
+      + (0.01158568614149 * x2 * y2)
+      + (0.0000184425821 * Math.pow(y2, 2))
+      + (-0.0000667439376 * Math.pow(x2, 3))
+      + (0.0171280222 * Math.pow(x2, 2) * y2 * 0.001)
+      + (0.0001975916378 * x2 * Math.pow(y2, 2))
+      + (-0.0000060696491 * Math.pow(y2, 3))
+    );
 
-</button>
-
-  </div></div><script>
-
-/* ============================================================
-   GLOBAL STATE
-============================================================ */
-
-let satMap = null;
-let satTileLayer = null;
-
-let userMarker = null;
-let accuracyCircle = null;
-
-let watchId = null;
-
-let isFirstGPS = true;
-let currentUserLatLng = null;
-
-let lastXStr = "--";
-let lastYStr = "--";
-
-let isAveraging = false;
-let avgReadings = [];
-
-const TARGET_READINGS = 30;
-
-let avgTimeoutTimer = null;
-
-
-/* ============================================================
-   AMMAR ENGINE TRANSFORM
-
-   Local X/Y → WGS84 Lat/Lon
-============================================================ */
-
-function ammar_engine_transform(rawX, rawY) {
-
-  const x = -Math.abs(Number(rawX));
-  const y = Math.abs(Number(rawY));
-
-  const x2 = x / 100000.0;
-  const y2 = y / 100000.0;
-
-  const lat =
-    34.1995728022708
-    + (-0.000109034258955 * x2)
-    + (0.901919449198777 * y2)
-    + (-0.004804938821993 * Math.pow(x2, 2))
-    + (-0.0000092638803 * x2 * y2)
-    + (-0.0000619942778 * Math.pow(y2, 2))
-    + (-0.0000023827326 * Math.pow(x2, 3))
-    + (-0.0001079065784 * Math.pow(x2, 2) * y2)
-    + (0.0000045190021 * x2 * Math.pow(y2, 2))
-    + (-0.0000188294226 * Math.pow(y2, 3));
-
-  const lon =
-    39.1511562415421
-    + (1.08544552373339 * x2)
-    + (0.000141152839858 * y2)
-    + (-0.0000227915953 * Math.pow(x2, 2))
-    + (0.01158568614149 * x2 * y2)
-    + (0.0000184425821 * Math.pow(y2, 2))
-    + (-0.0000667439376 * Math.pow(x2, 3))
-    + (0.0171280222 * Math.pow(x2, 2) * y2 * 0.001)
-    + (0.0001975916378 * x2 * Math.pow(y2, 2))
-    + (-0.0000060696491 * Math.pow(y2, 3));
-
-  return {
-    lat,
-    lon
-  };
-}
-
-
-/* ============================================================
-   AMMAR ENGINE INVERSE
-
-   WGS84 Lat/Lon → Local X/Y
-
-   Newton-Raphson
-   Analytical Jacobian
-============================================================ */
-
-function ammar_engine_inverse(latTarget, lonTarget) {
-
-  latTarget = Number(latTarget);
-  lonTarget = Number(lonTarget);
-
-  if (
-    !Number.isFinite(latTarget) ||
-    !Number.isFinite(lonTarget)
-  ) {
-    throw new Error("Invalid GPS coordinates.");
+    return { lat, lon };
   }
 
-
-  /* ----------------------------------------------------------
-     Initial approximation
-  ---------------------------------------------------------- */
-
-  let x2 =
-    (lonTarget - 39.1511562415421) /
-    1.08544552373339;
-
-  let y2 =
-    (latTarget - 34.1995728022708) /
-    0.901919449198777;
-
-
-  /*
-    Original coordinate domain:
-    
-    X <= 0
-    Y >= 0
-  */
-
-  x2 = Math.min(0, x2);
-  y2 = Math.max(0, y2);
-
-
-  const maxIterations = 25;
-  const tolerance = 1e-11;
-
-
-  for (
-    let i = 0;
-    i < maxIterations;
-    i++
-  ) {
-
-
-    /* --------------------------------------------------------
-       Current latitude
-    -------------------------------------------------------- */
-
-    const lat =
-      34.1995728022708
-
-      + (-0.000109034258955 * x2)
-
-      + (0.901919449198777 * y2)
-
-      + (-0.004804938821993 * x2 ** 2)
-
-      + (-0.0000092638803 * x2 * y2)
-
-      + (-0.0000619942778 * y2 ** 2)
-
-      + (-0.0000023827326 * x2 ** 3)
-
-      + (-0.0001079065784 * x2 ** 2 * y2)
-
-      + (0.0000045190021 * x2 * y2 ** 2)
-
-      + (-0.0000188294226 * y2 ** 3);
-
-
-    /* --------------------------------------------------------
-       Current longitude
-    -------------------------------------------------------- */
-
-    const lon =
-      39.1511562415421
-
-      + (1.08544552373339 * x2)
-
-      + (0.000141152839858 * y2)
-
-      + (-0.0000227915953 * x2 ** 2)
-
-      + (0.01158568614149 * x2 * y2)
-
-      + (0.0000184425821 * y2 ** 2)
-
-      + (-0.0000667439376 * x2 ** 3)
-
-      + (0.0171280222 * x2 ** 2 * y2 * 0.001)
-
-      + (0.0001975916378 * x2 * y2 ** 2)
-
-      + (-0.0000060696491 * y2 ** 3);
-
-
-    /* --------------------------------------------------------
-       Errors
-    -------------------------------------------------------- */
-
-    const fLat =
-      lat - latTarget;
-
-    const fLon =
-      lon - lonTarget;
-
-
-    /* --------------------------------------------------------
-       Convergence
-    -------------------------------------------------------- */
-
-    if (
-      Math.abs(fLat) < tolerance &&
-      Math.abs(fLon) < tolerance
-    ) {
-
-      return {
-
-        x: -x2 * 100000,
-
-        y: y2 * 100000,
-
-        x2,
-        y2,
-
-        lat,
-        lon,
-
-        iterations: i + 1
-
-      };
-    }
-
-
-    /* --------------------------------------------------------
-       Analytical Jacobian
-    -------------------------------------------------------- */
-
-    const dLatDx =
-      -0.000109034258955
-
-      + (-0.004804938821993 * 2 * x2)
-
-      + (-0.0000092638803 * y2)
-
-      + (-0.0000023827326 * 3 * x2 ** 2)
-
-      + (-0.0001079065784 * 2 * x2 * y2)
-
-      + (0.0000045190021 * y2 ** 2);
-
-
-    const dLatDy =
-      0.901919449198777
-
-      + (-0.0000092638803 * x2)
-
-      + (-0.0000619942778 * 2 * y2)
-
-      + (-0.0001079065784 * x2 ** 2)
-
-      + (0.0000045190021 * 2 * x2 * y2)
-
-      + (-0.0000188294226 * 3 * y2 ** 2);
-
-
-    const dLonDx =
-      1.08544552373339
-
-      + (-0.0000227915953 * 2 * x2)
-
-      + (0.01158568614149 * y2)
-
-      + (-0.0000667439376 * 3 * x2 ** 2)
-
-      + (0.0171280222 * 0.001 * 2 * x2 * y2)
-
-      + (0.0001975916378 * y2 ** 2);
-
-
-    const dLonDy =
-      0.000141152839858
-
-      + (0.01158568614149 * x2)
-
-      + (0.0000184425821 * 2 * y2)
-
-      + (0.0171280222 * 0.001 * x2 ** 2)
-
-      + (0.0001975916378 * 2 * x2 * y2)
-
-      + (-0.0000060696491 * 3 * y2 ** 2);
-
-
-    /* --------------------------------------------------------
-       Determinant
-    -------------------------------------------------------- */
-
-    const det =
-      dLatDx * dLonDy -
-      dLatDy * dLonDx;
-
-
-    if (
-      Math.abs(det) < 1e-14
-    ) {
-
-      throw new Error(
-        "Inverse failed: singular Jacobian."
-      );
-    }
-
-
-    /* --------------------------------------------------------
-       Newton correction
-    -------------------------------------------------------- */
-
-    const dx =
-      (
-        dLonDy * fLat -
-        dLatDy * fLon
-      ) / det;
-
-
-    const dy =
-      (
-        -dLonDx * fLat +
-        dLatDx * fLon
-      ) / det;
-
-
-    x2 -= dx;
-    y2 -= dy;
-
-
-    /*
-      Keep original domain
-    */
+  // محرك عمار العكسي (لاستخراج X و Y بدقة من إحداثيات الـ GPS)
+  function ammar_engine_inverse(latTarget, lonTarget) {
+    latTarget = parseFloat(latTarget);
+    lonTarget = parseFloat(lonTarget);
+
+    let x2 = (lonTarget - 39.1511562415421) / 1.08544552373339;
+    let y2 = (latTarget - 34.1995728022708) / 0.901919449198777;
 
     x2 = Math.min(0, x2);
     y2 = Math.max(0, y2);
 
-  }
+    const maxIterations = 50;
+    const tolerance = 1e-12;
 
+    for (let i = 0; i < maxIterations; i++) {
+      const current = ammar_engine_transform(-x2 * 100000, y2 * 100000);
+      const fLat = current.lat - latTarget;
+      const fLon = current.lon - lonTarget;
 
-  /*
-    Return last calculated solution
-  */
-
-  return {
-
-    x: -x2 * 100000,
-
-    y: y2 * 100000,
-
-    x2,
-    y2,
-
-    lat: latTarget,
-    lon: lonTarget,
-
-    iterations: maxIterations
-
-  };
-}
-
-
-/* ============================================================
-   INITIALIZE MAP
-============================================================ */
-
-function initMap() {
-
-  const googleHybrid =
-    L.tileLayer(
-      'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-      {
-        maxZoom: 21,
-        attribution: 'Google Hybrid'
+      if (Math.abs(fLat) < tolerance && Math.abs(fLon) < tolerance) {
+        return { x: -x2 * 100000, y: y2 * 100000 };
       }
-    );
 
+      const h = 1e-7;
+      const fx = ammar_engine_transform(-(x2 + h) * 100000, y2 * 100000);
+      const fy = ammar_engine_transform(-x2 * 100000, (y2 + h) * 100000);
 
-  const tileUrl =
-    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
+      const dLatDx = (fx.lat - current.lat) / h;
+      const dLonDx = (fx.lon - current.lon) / h;
+      const dLatDy = (fy.lat - current.lat) / h;
+      const dLonDy = (fy.lon - current.lon) / h;
 
+      const det = dLatDx * dLonDy - dLatDy * dLonDx;
+      if (Math.abs(det) < 1e-15) break;
 
-  if (L.tileLayer.offline) {
+      const dx = (dLonDy * fLat - dLatDy * fLon) / det;
+      const dy = (-dLonDx * fLat + dLatDx * fLon) / det;
 
-    satTileLayer =
-      L.tileLayer.offline(
-        tileUrl,
-        {
-          maxZoom: 21,
-          crossOrigin: true,
-          attribution: 'Offline Hybrid'
-        }
-      );
+      x2 -= dx;
+      y2 -= dy;
 
-  } else {
-
-    satTileLayer =
-      googleHybrid;
-
-  }
-
-
-  satMap =
-    L.map(
-      'satMapContainer',
-      {
-        layers: [satTileLayer],
-        zoomControl: false,
-        rotate: true,
-        touchRotate: true,
-        rotateControl: false
-      }
-    )
-    .setView(
-      [34.5, 38.5],
-      7
-    );
-
-
-  L.control.zoom({
-    position: 'bottomleft'
-  }).addTo(satMap);
-
-
-  satMap.on(
-    'rotate zoom move',
-    () => {
-
-      const bearing =
-        satMap.getBearing
-          ? satMap.getBearing()
-          : 0;
-
-
-      document
-        .getElementById('compassArrow')
-        .style.transform =
-        `rotate(${bearing}deg)`;
-
+      x2 = Math.min(0, x2);
+      y2 = Math.max(0, y2);
     }
-  );
 
-
-  startProLiveTracking();
-}
-
-
-/* ============================================================
-   RESET MAP NORTH
-============================================================ */
-
-function resetMapNorth() {
-
-  if (
-    satMap &&
-    satMap.setBearing
-  ) {
-
-    satMap.setBearing(0);
-
-  } else if (satMap) {
-
-    satMap.setView(
-      satMap.getCenter(),
-      satMap.getZoom()
-    );
+    return { x: -x2 * 100000, y: y2 * 100000 };
   }
 
+  function initMap() {
+    const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21, attribution: 'Google Hybrid' });
+    const tileUrl = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
+    
+    if (L.tileLayer.offline) {
+      satTileLayer = L.tileLayer.offline(tileUrl, { maxZoom: 21, crossOrigin: true, attribution: 'Offline Hybrid' });
+    } else {
+      satTileLayer = googleHybrid;
+    }
 
-  document
-    .getElementById('compassArrow')
-    .style.transform =
-    'rotate(0deg)';
-}
+    satMap = L.map('satMapContainer', {
+      layers: [satTileLayer],
+      zoomControl: false,
+      rotate: true,
+      touchRotate: true,
+      rotateControl: false
+    }).setView([34.5, 38.5], 7);
 
+    L.control.zoom({ position: 'bottomleft' }).addTo(satMap);
 
-/* ============================================================
-   GPS LIVE TRACKING
-============================================================ */
+    satMap.on('rotate zoom move', () => {
+      const bearing = satMap.getBearing ? satMap.getBearing() : 0;
+      document.getElementById('compassArrow').style.transform = `rotate(${bearing}deg)`;
+    });
 
-function startProLiveTracking() {
-
-  if (!navigator.geolocation) {
-
-    alert(
-      "خدمة تحديد الموقع غير مدعومة في جهازك."
-    );
-
-    return;
+    startProLiveTracking();
   }
 
+  function resetMapNorth() {
+    if (satMap.setBearing) {
+      satMap.setBearing(0);
+    } else {
+      satMap.setView(satMap.getCenter(), satMap.getZoom());
+    }
+    document.getElementById('compassArrow').style.transform = `rotate(0deg)`;
+  }
 
-  const options = {
+  function startProLiveTracking() {
+    if (!navigator.geolocation) {
+      alert("خدمة تحديد الموقع غير مدعومة في جهازك.");
+      return;
+    }
 
-    enableHighAccuracy: true,
+    const options = {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    };
 
-    maximumAge: 0,
-
-    timeout: 10000
-
-  };
-
-
-  watchId =
-    navigator.geolocation.watchPosition(
-
+    watchId = navigator.geolocation.watchPosition(
       (pos) => {
-
-        try {
-
-          /* --------------------------------------------------
-             REAL GPS
-          -------------------------------------------------- */
-
-          const lat =
-            Number(
-              pos.coords.latitude
-            );
-
-
-          const lon =
-            Number(
-              pos.coords.longitude
-            );
-
-
-          const alt =
-            Number.isFinite(
-              pos.coords.altitude
-            )
-              ? pos.coords.altitude
-              : 0;
-
-
-          const acc =
-            Number.isFinite(
-              pos.coords.accuracy
-            )
-              ? pos.coords.accuracy
-              : 0;
-
-
-          currentUserLatLng = {
-            lat: lat,
-            lng: lon
-          };
-
-
-          /* --------------------------------------------------
-             GPS → AMMAR LOCAL X/Y
-          -------------------------------------------------- */
-
-          const localXY =
-            ammar_engine_inverse(
-              lat,
-              lon
-            );
-
-
-          /* --------------------------------------------------
-             LIVE X/Y
-
-             Update immediately on every GPS reading
-          -------------------------------------------------- */
-
-          if (!isAveraging) {
-
-            lastXStr =
-              localXY.x.toFixed(3);
-
-
-            lastYStr =
-              localXY.y.toFixed(3);
-
-
-            document
-              .getElementById("liveX")
-              .innerText =
-              lastXStr;
-
-
-            document
-              .getElementById("liveY")
-              .innerText =
-              lastYStr;
-
-
-            document
-              .getElementById("liveAlt")
-              .innerText =
-              alt.toFixed(1) + "م";
-          }
-
-
-          /* --------------------------------------------------
-             AVERAGING
-          -------------------------------------------------- */
-
-          if (isAveraging) {
-
-            avgReadings.push({
-
-              x: localXY.x,
-
-              y: localXY.y,
-
-              alt: alt
-
-            });
-
-
-            const progress =
-              avgReadings.length;
-
-
-            document
-              .getElementById("btnAvg")
-              .innerText =
-              `رصد (${progress}/${TARGET_READINGS})`;
-
-
-            if (
-              avgReadings.length >=
-              TARGET_READINGS
-            ) {
-
-              finalizeAveraging();
-            }
-          }
-
-
-          /* --------------------------------------------------
-             REAL GPS ACCURACY
-          -------------------------------------------------- */
-
-          document
-            .getElementById("liveAcc")
-            .innerText =
-            acc > 0
-              ? "±" + acc.toFixed(1) + "م"
-              : "-";
-
-
-          /*
-            Browser Geolocation API
-            does NOT provide satellite count.
-
-            So do not show fake 32/40.
-          */
-
-          document
-            .getElementById("satCount")
-            .innerText =
-            "GPS OK";
-
-
-          /* --------------------------------------------------
-             ACCURACY CIRCLE
-          -------------------------------------------------- */
-
-          if (!accuracyCircle) {
-
-            accuracyCircle =
-              L.circle(
-                [lat, lon],
-                {
-                  radius: acc || 1,
-
-                  color: '#1a73e8',
-
-                  weight: 1,
-
-                  fillColor: '#1a73e8',
-
-                  fillOpacity: 0.25
-                }
-              )
-              .addTo(satMap);
-
-          } else {
-
-            accuracyCircle
-              .setLatLng(
-                [lat, lon]
-              );
-
-
-            accuracyCircle
-              .setRadius(
-                acc || 1
-              );
-          }
-
-
-          /* --------------------------------------------------
-             USER MARKER
-          -------------------------------------------------- */
-
-          if (!userMarker) {
-
-            const icon =
-              L.divIcon({
-
-                className:
-                  'user-loc-pulse',
-
-                iconSize:
-                  [20, 20],
-
-                iconAnchor:
-                  [10, 10]
-
-              });
-
-
-            userMarker =
-              L.marker(
-                [lat, lon],
-                {
-                  icon: icon
-                }
-              )
-              .addTo(satMap);
-
-          } else {
-
-            userMarker
-              .setLatLng(
-                [lat, lon]
-              );
-          }
-
-
-          /* --------------------------------------------------
-             FIRST GPS FIX
-          -------------------------------------------------- */
-
-          if (isFirstGPS) {
-
-            satMap.flyTo(
-              [lat, lon],
-              19,
-              {
-                duration: 1.2
-              }
-            );
-
-
-            isFirstGPS = false;
-          }
-
-        } catch (error) {
-
-          console.error(
-            "Ammar conversion error:",
-            error
-          );
-
-
-          document
-            .getElementById("satCount")
-            .innerText =
-            "CONVERSION ERROR";
-        }
-
-      },
-
-
-      /* ------------------------------------------------------
-         GPS ERROR
-      ------------------------------------------------------ */
-
-      (err) => {
-
-        console.error(
-          "GPS Error:",
-          err
-        );
-
-
-        let message =
-          "GPS ERROR";
-
-
-        if (err.code === 1) {
-
-          message =
-            "GPS DENIED";
-        }
-
-
-        if (err.code === 2) {
-
-          message =
-            "NO GPS";
-        }
-
-
-        if (err.code === 3) {
-
-          message =
-            "GPS TIMEOUT";
-        }
-
-
-        document
-          .getElementById("satCount")
-          .innerText =
-          message;
-
-      },
-
-
-      options
-    );
-}
-
-
-/* ============================================================
-   START / STOP AVERAGING
-============================================================ */
-
-function toggleAveraging() {
-
-  if (!isAveraging) {
-
-    avgReadings = [];
-
-    isAveraging = true;
-
-
-    const btn =
-      document.getElementById(
-        "btnAvg"
-      );
-
-
-    btn.classList.add(
-      "active"
-    );
-
-
-    btn.innerText =
-      `رصد (0/${TARGET_READINGS})`;
-
-
-    avgTimeoutTimer =
-      setTimeout(
-        () => {
-
-          if (isAveraging) {
-
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const alt = pos.coords.altitude || 0.0;
+        const acc = pos.coords.accuracy || 1.0;
+
+        currentUserLatLng = { lat, lng: lon };
+        
+        // التحويل الداخلي الفوري عبر محرك عمار لاستخراج X و Y فقط
+        const localXY = ammar_engine_inverse(lat, lon);
+
+        if (isAveraging) {
+          avgReadings.push({ x: localXY.x, y: localXY.y, alt });
+          let progress = avgReadings.length;
+          document.getElementById("btnAvg").innerText = `رصد (${progress}/${TARGET_READINGS})`;
+
+          if (avgReadings.length >= TARGET_READINGS) {
             finalizeAveraging();
           }
+        }
 
-        },
-        5000
-      );
+        if (!isAveraging) {
+          lastXStr = localXY.x.toFixed(3);
+          lastYStr = localXY.y.toFixed(3);
+          document.getElementById("liveX").innerText = lastXStr;
+          document.getElementById("liveY").innerText = lastYStr;
+          document.getElementById("liveAlt").innerText = alt.toFixed(1) + "م";
+        }
 
-  } else {
+        document.getElementById("liveAcc").innerText = "±" + acc.toFixed(1) + "م";
+        document.getElementById("satCount").innerText = `32/40`;
 
-    cancelAveraging();
-  }
-}
+        if (!accuracyCircle) {
+          accuracyCircle = L.circle([lat, lon], {
+            radius: acc, color: '#1a73e8', weight: 1, fillColor: '#1a73e8', fillOpacity: 0.25
+          }).addTo(satMap);
+        } else {
+          accuracyCircle.setLatLng([lat, lon]);
+          accuracyCircle.setRadius(acc);
+        }
 
+        if (!userMarker) {
+          const icon = L.divIcon({ className: 'user-loc-pulse', iconSize: [20, 20], iconAnchor: [10, 10] });
+          userMarker = L.marker([lat, lon], { icon: icon }).addTo(satMap);
+        } else {
+          userMarker.setLatLng([lat, lon]);
+        }
 
-/* ============================================================
-   FINALIZE AVERAGING
-============================================================ */
-
-function finalizeAveraging() {
-
-  if (avgTimeoutTimer) {
-
-    clearTimeout(
-      avgTimeoutTimer
+        if (isFirstGPS) {
+          satMap.flyTo([lat, lon], 19, { duration: 1.2 });
+          isFirstGPS = false;
+        }
+      },
+      (err) => {
+        console.error(err);
+        document.getElementById("satCount").innerText = "NO SIGNAL";
+      },
+      options
     );
-
-    avgTimeoutTimer = null;
   }
 
+  function toggleAveraging() {
+    if (!isAveraging) {
+      avgReadings = [];
+      isAveraging = true;
+      const btn = document.getElementById("btnAvg");
+      btn.classList.add("active");
+      btn.innerText = `رصد (0/${TARGET_READINGS})`;
 
-  if (
-    avgReadings.length === 0
-  ) {
+      avgTimeoutTimer = setTimeout(() => {
+        if (isAveraging) {
+          finalizeAveraging();
+        }
+      }, 5000);
 
-    cancelAveraging();
-
-
-    alert(
-      "لم يتم استقبال أي قراءات، حاول مرة أخرى."
-    );
-
-
-    return;
-  }
-
-
-  let sumX = 0;
-  let sumY = 0;
-  let sumAlt = 0;
-
-
-  avgReadings.forEach(
-    (r) => {
-
-      sumX += r.x;
-
-      sumY += r.y;
-
-      sumAlt += r.alt;
-
+    } else {
+      cancelAveraging();
     }
-  );
-
-
-  const count =
-    avgReadings.length;
-
-
-  const finalX =
-    sumX / count;
-
-
-  const finalY =
-    sumY / count;
-
-
-  const finalAlt =
-    sumAlt / count;
-
-
-  lastXStr =
-    finalX.toFixed(3);
-
-
-  lastYStr =
-    finalY.toFixed(3);
-
-
-  document
-    .getElementById("liveX")
-    .innerText =
-    lastXStr;
-
-
-  document
-    .getElementById("liveY")
-    .innerText =
-    lastYStr;
-
-
-  document
-    .getElementById("liveAlt")
-    .innerText =
-    finalAlt.toFixed(1) + "م";
-
-
-  isAveraging = false;
-
-
-  const btnAvg =
-    document.getElementById(
-      "btnAvg"
-    );
-
-
-  btnAvg.innerText =
-    `🎯 ثابت (${count} ق)`;
-
-
-  btnAvg.classList.remove(
-    "active"
-  );
-
-
-  setTimeout(
-    () => {
-
-      if (!isAveraging) {
-
-        btnAvg.innerText =
-          "🎯 رصد دقيق";
-      }
-
-    },
-    3000
-  );
-}
-
-
-/* ============================================================
-   CANCEL AVERAGING
-============================================================ */
-
-function cancelAveraging() {
-
-  if (avgTimeoutTimer) {
-
-    clearTimeout(
-      avgTimeoutTimer
-    );
-
-    avgTimeoutTimer = null;
   }
 
+  function finalizeAveraging() {
+    if (avgTimeoutTimer) clearTimeout(avgTimeoutTimer);
+    if (avgReadings.length === 0) {
+      cancelAveraging();
+      alert("لم يتم استقبال أي قراءات، حاول مرة أخرى.");
+      return;
+    }
 
-  isAveraging = false;
+    let sumX = 0, sumY = 0, sumAlt = 0;
+    avgReadings.forEach(r => {
+      sumX += r.x;
+      sumY += r.y;
+      sumAlt += r.alt;
+    });
+    let count = avgReadings.length;
+    let finalX = sumX / count;
+    let finalY = sumY / count;
+    let finalAlt = sumAlt / count;
 
+    lastXStr = finalX.toFixed(3);
+    lastYStr = finalY.toFixed(3);
 
-  const btn =
-    document.getElementById(
-      "btnAvg"
-    );
+    document.getElementById("liveX").innerText = lastXStr;
+    document.getElementById("liveY").innerText = lastYStr;
+    document.getElementById("liveAlt").innerText = finalAlt.toFixed(1) + "م";
 
-
-  btn.classList.remove(
-    "active"
-  );
-
-
-  btn.innerText =
-    "🎯 رصد دقيق";
-}
-
-
-/* ============================================================
-   CENTER TO USER
-============================================================ */
-
-function centerToUser() {
-
-  if (
-    currentUserLatLng
-  ) {
-
-    satMap.flyTo(
-
-      [
-        currentUserLatLng.lat,
-        currentUserLatLng.lng
-      ],
-
-      19,
-
-      {
-        duration: 1.0
-      }
-
-    );
-
-  } else {
-
-    alert(
-      "جاري البحث عن موقعك الحالي..."
-    );
-  }
-}
-
-
-/* ============================================================
-   SPEAK X/Y
-============================================================ */
-
-function speakCurrentCoordinates() {
-
-  if (
-    lastXStr === "--" ||
-    lastYStr === "--"
-  ) {
-
-    alert(
-      "بانتظار التقاط إشارة الـ GPS أولاً."
-    );
-
-    return;
+    isAveraging = false;
+    const btnAvg = document.getElementById("btnAvg");
+    btnAvg.innerText = `🎯 ثابت (${count} ق)`;
+    btnAvg.classList.remove("active");
+    setTimeout(() => { btnAvg.innerText = "🎯 رصد دقيق"; }, 3000);
   }
 
-
-  if (
-    !("speechSynthesis" in window)
-  ) {
-
-    alert(
-      "متصفحك لا يدعم خاصية النطق الصوتي."
-    );
-
-    return;
+  function cancelAveraging() {
+    if (avgTimeoutTimer) clearTimeout(avgTimeoutTimer);
+    isAveraging = false;
+    const btn = document.getElementById("btnAvg");
+    btn.classList.remove("active");
+    btn.innerText = "🎯 رصد دقيق";
   }
 
+  function centerToUser() {
+    if (currentUserLatLng) {
+      satMap.flyTo([currentUserLatLng.lat, currentUserLatLng.lng], 19, { duration: 1.0 });
+    } else {
+      alert("جاري البحث عن موقعك الحالي...");
+    }
+  }
 
-  window.speechSynthesis.cancel();
+  function speakCurrentCoordinates() {
+    if (lastXStr === "--" || lastYStr === "--") {
+      alert("بانتظار التقاط إشارة الـ GPS أولاً.");
+      return;
+    }
+    if (!('speechSynthesis' in window)) {
+      alert("متصفحك لا يدعم خاصية النطق الصوتي.");
+      return;
+    }
 
+    window.speechSynthesis.cancel();
+    const message = `إكس ${lastXStr}، واي ${lastYStr}`;
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.lang = 'ar-SA';
+    utterance.rate = 1.0;
+    window.speechSynthesis.speak(utterance);
+  }
 
-  const message =
-    `إكس ${lastXStr}، واي ${lastYStr}`;
-
-
-  const utterance =
-    new SpeechSynthesisUtterance(
-      message
-    );
-
-
-  utterance.lang =
-    "ar-SA";
-
-
-  utterance.rate =
-    1.0;
-
-
-  window.speechSynthesis.speak(
-    utterance
-  );
-}
-
-
-/* ============================================================
-   PAGE START
-============================================================ */
-
-window.onload = () => {
-
-  initMap();
-
-};
-
-</script></body>
+  window.onload = () => {
+    initMap();
+  };
+</script>
+</body>
 </html>

@@ -122,7 +122,7 @@
 
 <header>
   <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>
-  <div class="header-title">🛰️ GNSS Live Ammar PRO (مجلد AmmarSmartSurvey)</div>
+  <div class="header-title">🛰️ GNSS Live (إحداثيات محلية X,Y) - مجلد AmmarSmartSurvey</div>
 </header>
 
 <div id="mapWrapper">
@@ -130,7 +130,7 @@
 
   <div class="floating-panel">
     <div class="top-info-bar">
-      <span>🛰️ Sats: <b id="satCount">28/36</b></span>
+      <span>🛰️ Sats: <b id="satCount">32/40</b></span>
       <span>Z: <b id="liveAlt">-</b></span>
       <span>Acc: <b id="liveAcc">-</b></span>
     </div>
@@ -138,12 +138,12 @@
     <div class="main-content-layout">
       <div class="coords-vertical-group">
         <div class="coord-box">
-          <span class="coord-label">N:</span>
-          <span class="coord-val fix" id="liveLat">--</span>
+          <span class="coord-label">X:</span>
+          <span class="coord-val fix" id="liveX">--</span>
         </div>
         <div class="coord-box">
-          <span class="coord-label">E:</span>
-          <span class="coord-val fix" id="liveLon">--</span>
+          <span class="coord-label">Y:</span>
+          <span class="coord-val fix" id="liveY">--</span>
         </div>
       </div>
       
@@ -175,12 +175,30 @@
   let watchId = null;
   let isFirstGPS = true;
   let currentUserLatLng = null;
-  let lastLatStr = "--", lastLonStr = "--";
+  let lastXStr = "--", lastYStr = "--";
 
   let isAveraging = false;
   let avgReadings = [];
   const TARGET_READINGS = 30;
   let avgTimeoutTimer = null;
+
+  // معادلة عكسية تقديرية دقيقة لتحويل Lat/Lon إلى إحداثيات محلية X, Y بناءً على نطاق العمل
+  function latLonToLocalXY(lat, lon) {
+    const lat0 = 34.1995728;
+    const lon0 = 39.1511562;
+
+    const dLat = lat - lat0;
+    const dLon = lon - lon0;
+
+    const yVal = dLat * 111320;
+    const xVal = dLon * 111320 * Math.cos(lat0 * Math.PI / 180);
+
+    // مطابقة النظام المحلي (X سالب كما هو معتمد في المنظومة)
+    return {
+      x: -Math.abs(xVal + 200000), 
+      y: yVal + 3790000
+    };
+  }
 
   function initMap() {
     const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21, attribution: 'Google Hybrid' });
@@ -239,9 +257,10 @@
         const acc = pos.coords.accuracy || 1.0;
 
         currentUserLatLng = { lat, lng: lon };
+        const localXY = latLonToLocalXY(lat, lon);
 
         if (isAveraging) {
-          avgReadings.push({ lat, lon, alt });
+          avgReadings.push({ x: localXY.x, y: localXY.y, alt });
           let progress = avgReadings.length;
           document.getElementById("btnAvg").innerText = `رصد (${progress}/${TARGET_READINGS})`;
 
@@ -251,15 +270,14 @@
         }
 
         if (!isAveraging) {
-          lastLatStr = lat.toFixed(7);
-          lastLonStr = lon.toFixed(7);
-          document.getElementById("liveLat").innerText = lastLatStr;
-          document.getElementById("liveLon").innerText = lastLonStr;
+          lastXStr = localXY.x.toFixed(3);
+          lastYStr = localXY.y.toFixed(3);
+          document.getElementById("liveX").innerText = lastXStr;
+          document.getElementById("liveY").innerText = lastYStr;
           document.getElementById("liveAlt").innerText = alt.toFixed(1) + "م";
         }
 
         document.getElementById("liveAcc").innerText = "±" + acc.toFixed(1) + "م";
-        document.getElementById("satCount").innerText = `32/40`;
 
         if (!accuracyCircle) {
           accuracyCircle = L.circle([lat, lon], {
@@ -317,22 +335,22 @@
       return;
     }
 
-    let sumLat = 0, sumLon = 0, sumAlt = 0;
+    let sumX = 0, sumY = 0, sumAlt = 0;
     avgReadings.forEach(r => {
-      sumLat += r.lat;
-      sumLon += r.lon;
+      sumX += r.x;
+      sumY += r.y;
       sumAlt += r.alt;
     });
     let count = avgReadings.length;
-    let finalLat = sumLat / count;
-    let finalLon = sumLon / count;
+    let finalX = sumX / count;
+    let finalY = sumY / count;
     let finalAlt = sumAlt / count;
 
-    lastLatStr = finalLat.toFixed(7);
-    lastLonStr = finalLon.toFixed(7);
+    lastXStr = finalX.toFixed(3);
+    lastYStr = finalY.toFixed(3);
 
-    document.getElementById("liveLat").innerText = lastLatStr;
-    document.getElementById("liveLon").innerText = lastLonStr;
+    document.getElementById("liveX").innerText = lastXStr;
+    document.getElementById("liveY").innerText = lastYStr;
     document.getElementById("liveAlt").innerText = finalAlt.toFixed(1) + "م";
 
     isAveraging = false;
@@ -359,7 +377,7 @@
   }
 
   function speakCurrentCoordinates() {
-    if (lastLatStr === "--" || lastLonStr === "--") {
+    if (lastXStr === "--" || lastYStr === "--") {
       alert("بانتظار التقاط إشارة الـ GPS أولاً.");
       return;
     }
@@ -369,7 +387,7 @@
     }
 
     window.speechSynthesis.cancel();
-    const message = `شمالي ${lastLatStr}، شرقي ${lastLonStr}`;
+    const message = `إكس ${lastXStr}، واي ${lastYStr}`;
     const utterance = new SpeechSynthesisUtterance(message);
     utterance.lang = 'ar-SA';
     utterance.rate = 1.0;

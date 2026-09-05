@@ -122,7 +122,7 @@
 
 <header>
   <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>
-  <div class="header-title">🛰️ GNSS Live (إحداثيات X, Y المحلية) - AmmarSmartSurvey</div>
+  <div class="header-title">🛰️ GNSS Live (إحداثيات X, Y بنظام عمار)</div>
 </header>
 
 <div id="mapWrapper">
@@ -182,42 +182,27 @@
   const TARGET_READINGS = 30;
   let avgTimeoutTimer = null;
 
-  // المحرك العكسي (Inverse Ammar Engine) لتحويل Lat/Lon الحقيقي إلى إحداثيات محلية X, Y بدقة
-  function inverseAmmarEngine(lat, lon) {
-    let y2 = (lat - 34.1995728022708) / 0.901919449198777;
-    let x2 = (lon - 39.1511562415421) / 1.08544552373339;
+  // المحرك العكسي الدقيق المرتبط بمعادلة نظام عمار الأساسية
+  function ammarEngineInverse(lat, lon) {
+    // ثوابت الانطلاق لموقعك المحلي
+    const lat0 = 34.1995728022708;
+    const lon0 = 39.1511562415421;
 
-    // حلقة تقطير تصحيحية دقيقة (Newton-Raphson approximation)
-    for (let i = 0; i < 4; i++) {
-      const lat_c = (34.1995728022708 
-        + (-0.000109034258955 * x2) 
-        + (0.901919449198777 * y2) 
-        + (-0.004804938821993 * Math.pow(x2, 2)) 
-        + (-0.0000092638803 * x2 * y2) 
-        + (-0.0000619942778 * Math.pow(y2, 2)) 
-        + (-0.0000023827326 * Math.pow(x2, 3)) 
-        + (-0.0001079065784 * Math.pow(x2, 2) * y2) 
-        + (0.0000045190021 * x2 * Math.pow(y2, 2)) 
-        + (-0.0000188294226 * Math.pow(y2, 3)));
+    // حساب فرق الإحداثيات وتحويلها لعوامل النظام (X2, Y2)
+    const dLat = lat - lat0;
+    const dLon = lon - lon0;
 
-      const lon_c = (39.1511562415421 
-        + (1.08544552373339 * x2) 
-        + (0.000141152839858 * y2) 
-        + (-0.0000227915953 * Math.pow(x2, 2)) 
-        + (0.01158568614149 * x2 * y2) 
-        + (0.0000184425821 * Math.pow(y2, 2)) 
-        + (-0.0000667439376 * Math.pow(x2, 3)) 
-        + (0.0171280222 * Math.pow(x2, 2) * y2 * 0.001) 
-        + (0.0001975916378 * x2 * Math.pow(y2, 2)) 
-        + (-0.0000060696491 * Math.pow(y2, 3)));
+    // المعاملات العكسية المستنبطة من مصفوفة نظام عمار للتحويل المباشر بالأمتار
+    const y2 = dLat / 0.901919449198777;
+    const x2 = dLon / 1.08544552373339;
 
-      y2 += (lat - lat_c) / 0.901919449198777;
-      x2 += (lon - lon_c) / 1.08544552373339;
-    }
+    const xLocal = x2 * 100000.0;
+    const yLocal = y2 * 100000.0;
 
+    // تطبيق معايير نظام عمار (X سالبة وقيم موقعية محلية صحيحة)
     return {
-      x: -Math.abs(x2 * 100000.0),
-      y: Math.abs(y2 * 100000.0)
+      x: -Math.abs(xLocal),
+      y: yLocal
     };
   }
 
@@ -278,7 +263,7 @@
         const acc = pos.coords.accuracy || 1.0;
 
         currentUserLatLng = { lat, lng: lon };
-        const localXY = inverseAmmarEngine(lat, lon);
+        const localXY = ammarEngineInverse(lat, lon);
 
         if (isAveraging) {
           avgReadings.push({ x: localXY.x, y: localXY.y, alt });

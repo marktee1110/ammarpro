@@ -122,7 +122,7 @@
 
 <header>
   <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>
-  <div class="header-title">🛰️ GNSS Live (إحداثيات X, Y المحلية فقط)</div>
+  <div class="header-title">🛰️ GNSS Live (إحداثيات محلية X, Y فقط)</div>
 </header>
 
 <div id="mapWrapper">
@@ -219,7 +219,7 @@
     return { lat, lon };
   }
 
-  // محرك عمار العكسي (لاستخراج X و Y بدقة من إحداثيات الـ GPS)
+  // محرك عمار العكسي المعتمد لمعالجة الـ GPS واستخراج X و Y
   function ammar_engine_inverse(latTarget, lonTarget) {
     latTarget = parseFloat(latTarget);
     lonTarget = parseFloat(lonTarget);
@@ -325,7 +325,7 @@
 
         currentUserLatLng = { lat, lng: lon };
         
-        // التحويل الداخلي الفوري عبر محرك عمار لاستخراج X و Y فقط
+        // تطبيق محرك عمار واستخراج الإحداثيات المحلية فوراً
         const localXY = ammar_engine_inverse(lat, lon);
 
         if (isAveraging) {
@@ -341,6 +341,7 @@
         if (!isAveraging) {
           lastXStr = localXY.x.toFixed(3);
           lastYStr = localXY.y.toFixed(3);
+          // طباعة الإحداثيات المحلية X و Y حصرياً
           document.getElementById("liveX").innerText = lastXStr;
           document.getElementById("liveY").innerText = lastYStr;
           document.getElementById("liveAlt").innerText = alt.toFixed(1) + "م";

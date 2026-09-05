@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ar" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>AMMAR SURVEY - لوحة التحكم</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --primary: #0ea5e9;
+      --secondary: #6366f1;
+      --check: #0284c7;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --p5: #8b5cf6;
+      --bg: #f8fafc;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      direction: ltr;
+      text-align: left;
+    }
+    header {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+      border-bottom: 5px solid var(--accent);
+    }
+    header h1 { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: 1px; }
+    header p { margin: 10px 0 0; opacity: 0.8; font-weight: bold; }
+
+    .container {
+      max-width: 600px;
+      margin: -30px auto 40px;
+      padding: 0 15px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+    .menu-item {
+      background: white;
+      text-decoration: none;
+      color: #000;
+      padding: 20px;
+      border-radius: 15px;
+      border: 3px solid #000;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: 0.2s;
+      box-shadow: 0 4px 0 #000;
+      position: relative;
+    }
+    .menu-item:active {
+      transform: translateY(4px);
+      box-shadow: none;
+    }
+    .icon {
+      font-size: 35px;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: #f1f5f9;
+    }
+    .text h2 { margin: 0; font-size: 20px; font-weight: 900; }
+    .text p { margin: 5px 0 0; font-size: 13px; color: #64748b; font-weight: bold; }
+
+    .p1 { border-color: var(--primary); }
+    .p1 .icon { color: var(--primary); }
+    .p2 { border-color: var(--secondary); }
+    .p2 .icon { color: var(--secondary); }
+    .chk { border-color: var(--check); }
+    .chk .icon { color: var(--check); }
+    .p3 { border-color: #10b981; }
+    .p3 .icon { color: #10b981; }
+    .p4 { border-color: var(--accent); }
+    .p4 .icon { color: var(--accent); }
+    .p5 { border-color: var(--p5); }
+    .p5 .icon { color: var(--p5); }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-weight: 900;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>AMMAR SURVEY V3.0</h1>
+  <p>المساعد الذكي للمهندس المساح</p>
+</header>
+
+<div class="container">
+  <div class="menu-grid">
+    
+    <a href="p1_survey.html" class="menu-item p1">
+      <div class="icon">📐</div>
+      <div class="text">
+        <h2>الرفع الميداني</h2>
+        <p>حساب إحداثيات النقاط المرصودة</p>
+      </div>
+    </a>
+
+    <a href="p2_stakeout.html" class="menu-item p2">
+      <div class="icon">🎯</div>
+      <div class="text">
+        <h2>التوقيع المساحي</h2>
+        <p>حساب HD & HR لتوقيع النقاط مع ميزة PK</p>
+      </div>
+    </a>
+
+    <a href="concert.html" class="menu-item chk">
+      <div class="icon">🌐</div>
+      <div class="text">
+        <h2>تحويل الإحداثيات</h2>
+        <p>التحويل الجغرافي والتوقيع الصوتي</p>
+      </div>
+    </a>
+
+    <a href="GNSS.html" class="menu-item p3">
+      <div class="icon">🛰️</div>
+      <div class="text">
+        <h2>GNSS الحي</h2>
+        <p>موقع الأقمار، الإحداثيات والرصد الدقيق</p>
+      </div>
+    </a>
+
+    <a href="dwj.html" class="menu-item p4">
+      <div class="icon">🗺️</div>
+      <div class="text">
+        <h2>تحويل CAD إلى KML</h2>
+        <p>قراءة ملفات DXF والتحويل الميداني</p>
+      </div>
+    </a>
+
+    <a href="p5_resection.html" class="menu-item p5">
+      <div class="icon">📐</div>
+      <div class="text">
+        <h2>الإيزوليه المعكوس</h2>
+        <p>حساب إحداثيات نقطة الوقوف والتقاطع الخلفي</p>
+      </div>
+    </a>
+
+    <a href="p4_smart_search.html" class="menu-item p4">
+      <div class="icon">🔍</div>
+      <div class="text">
+        <h2>محرك البحث الذكي</h2>
+        <p>بحث متطور بالاسم والمنطقة والموقع</p>
+      </div>
+    </a>
+
+    <a href="p3_db_manager.html" class="menu-item p3">
+      <div class="icon">🗄️</div>
+      <div class="text">
+        <h2>مدير قاعدة البيانات</h2>
+        <p>استيراد إكسل وإدارة النقاط</p>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<div class="footer">
+  Developed by Eng. Ammar Yousef &copy; 2026
+</div>
+
+</body>
+</html>

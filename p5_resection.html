@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ar" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>📐 الإيزوليه المعكوس - م. عمار يوسف</title>
+
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Error', err));
+      });
+    }
+  </script>
+
+  <style>
+    :root{--main:#8b5cf6;--danger:#f43f5e;--ok:#10b981;--bg:#ffffff}
+    body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:#000;direction:ltr; text-align: left; overflow-x: hidden;}
+    nav{background:#1e293b; padding:10px; text-align:center; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;}
+    nav a{color:#fff; text-decoration:none; font-size:12px; font-weight:bold; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:5px;}
+    header{background:var(--main);color:#fff;padding:15px;text-align:center;}
+    header h1{margin:0;font-size:24px;font-weight:900}
+    .container{padding:8px; box-sizing: border-box; max-width: 980px; margin: 0 auto;}
+    .card{background:#fff; padding:12px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:10px; border:2px solid #000;}
+    
+    .input{padding:12px; border:3px solid #000; border-radius:8px; width:100%; font-size:16px; font-weight:900; box-sizing:border-box; background:#fff !important; color:#000 !important;}
+    .search-wrap { position: relative; width: 100%; }
+    .results-box { 
+        position: absolute; bottom: 100%; left: 0; right: 0; 
+        background: #fff; border: 3px solid #000; border-bottom: none;
+        max-height: 180px; overflow-y: auto; z-index: 9999; display: none;
+        border-radius: 8px 8px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.4);
+    }
+    .result-item { padding: 10px 12px; border-bottom: 1px solid #ddd; cursor: pointer; font-weight: 900; font-size: 14px; color: #000; }
+    .result-item:hover { background: #f0f9ff; }
+
+    .btn{padding:12px; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:900;}
+    .btn.main{background:#000;color:#fff}
+    .btn.ok{background:var(--ok);color:#fff}
+    .btn.danger{background:var(--danger);color:#fff}
+
+    table{width:100%; border-collapse: collapse; table-layout: fixed; margin-top: 10px;}
+    th, td { border: 3px solid #000; text-align: center; font-weight: 900; padding: 10px 2px; font-size: 16px;}
+    th { background: #eee; font-size: 13px; }
+    
+    .hidden { display: none !important; }
+    .summary-box { display: flex; justify-content: space-between; align-items: center; background: #f0f9ff; padding: 12px; border: 2px solid #000; font-weight: 900; font-size: 18px;}
+    .modal { display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); overflow-y:auto; }
+    .modal-content { background:#fff; margin:2% auto; padding:15px; width:94%; border-radius:10px; border:2px solid #000; }
+    #summaryText { background:#fff; color:#000; padding:15px; border:2px solid #000; font-family:monospace; font-size:16px; font-weight:900; white-space:pre-wrap; text-align:left; line-height:1.4; }
+  </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html">🏠 الرئيسية</a>
+    <a href="p1_survey.html">📐 الرفع</a>
+    <a href="maps2.html">🎯 التوقيع</a>
+    <a href="check.html">🔍 التحقيق</a>
+    <a href="p4_smart_search.html">🔍 البحث</a>
+    <a href="p3_db_manager.html">🗄️ النقاط</a>
+</nav>
+
+<header><h1>📐 برنامج الإيزوليه المعكوس</h1><p>م. عمار يوسف</p></header>
+
+<div class="container">
+
+  <div class="card">
+    <div id="ptAEdit">
+        <div class="search-wrap">
+            <input id="ptAName" class="input" placeholder="...مرجع الصفر A: ابحث" autocomplete="off">
+            <div id="ptAResults" class="results-box"></div>
+        </div>
+        <div style="display:flex; gap:5px; margin-top:5px;">
+            <input id="ptAX" class="input" type="number" placeholder="X" inputmode="decimal">
+            <input id="ptAY" class="input" type="number" placeholder="Y" inputmode="decimal">
+        </div>
+        <div style="margin-top:5px;">
+            <input id="ptAHz" class="input" type="number" placeholder="Hz_A زاوية الصفر (0)" value="0" inputmode="decimal">
+        </div>
+        <button onclick="toggleLock('ptA')" class="btn ok" style="width:100%; margin-top:8px;">✅ تثبيت الصفر</button>
+    </div>
+    <div id="ptAShow" class="summary-box hidden">
+        <div>🎯 الصفر A: <span id="txtPtAN"></span> | X:<span id="txtPtAX"></span> | Y:<span id="txtPtAY"></span></div>
+        <button onclick="toggleLock('ptA')" style="background:#000; color:#fff; border-radius:50%; padding:5px 12px; border:none; cursor:pointer;">✏️</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="ptBEdit">
+        <div class="search-wrap">
+            <input id="ptBName" class="input" placeholder="...إحداثيات الهدف المرصود B: ابحث" autocomplete="off">
+            <div id="ptBResults" class="results-box"></div>
+        </div>
+        <div style="display:flex; gap:5px; margin-top:5px;">
+            <input id="ptBX" class="input" type="number" placeholder="X الهدف B" inputmode="decimal">
+            <input id="ptBY" class="input" type="number" placeholder="Y الهدف B" inputmode="decimal">
+        </div>
+        <div style="margin-top:5px;">
+            <input id="ptBHD" class="input" type="number" placeholder="المسافة للهدف B المقاسة من وقوفك (HD)" inputmode="decimal">
+        </div>
+        <div style="margin-top:5px;">
+            <input id="ptBHz" class="input" type="number" placeholder="زاوية الهدف B بالنسبة لوقوفك والصفر (Hz)" inputmode="decimal">
+        </div>
+        <button onclick="toggleLock('ptB')" class="btn ok" style="width:100%; margin-top:8px;">✅ تثبيت النقطة B</button>
+    </div>
+    <div id="ptBShow" class="summary-box hidden">
+        <div>📍 النقطة B: <span id="txtPtBN"></span> | X:<span id="txtPtBX"></span> | Y:<span id="txtPtBY"></span></div>
+        <button onclick="toggleLock('ptB')" style="background:#000; color:#fff; border-radius:50%; padding:5px 12px; border:none; cursor:pointer;">✏️</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <button onclick="calculateResection()" class="btn main" style="width:100%; font-size:18px; padding:14px;">⚡ احسب إحداثيات نقطة الوقوف</button>
+  </div>
+
+  <div id="resCard" class="card hidden" style="border-color: var(--ok); background: #f0fdf4;">
+    <div style="font-weight:900; font-size:18px; text-align:center; margin-bottom:6px; color:#059669;">🏁 إحداثيات نقطة الوقوف (STN)</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:50%; background:#dcfce7; color:#065f46; font-size:14px;">X (شرقيات)</th>
+          <th style="width:50%; background:#dcfce7; color:#065f46; font-size:14px;">Y (شماليات)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="resX" style="color:#059669; font-size:22px; font-weight:900;">0.000</td>
+          <td id="resY" style="color:#059669; font-size:22px; font-weight:900;">0.000</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:10px; padding:10px; background:#fff; border:2px solid #000; border-radius:8px; font-weight:900; font-size:14px; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; justify-content:space-between;">
+        <span>انحراف الصفر (STN ➔ A):</span>
+        <span id="resAz" style="color:#2563eb;">0.0000 gon</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>المسافة المحسوبة للهدف A:</span>
+        <span id="resDistA" style="color:#2563eb;">0.000 م</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button onclick="saveToDB()" class="btn ok" style="flex:1;">💾 حفظ بالقاعدة</button>
+      <button onclick="showSummary()" class="btn" style="flex:1; background:#334155; color:#fff;">📝 ملخص الجلسة</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="summaryModal" class="modal">
+    <div class="modal-content">
+        <h2 style="text-align:center">📋 ملخص وتصدير الجلسة</h2>
+        <pre id="summaryText"></pre>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn ok" style="flex:2; background:#000" onclick="downloadTXT()">💾 تصدير .txt (عربي ضمن مجلد AmmarSmartSurvey)</button>
+            <button class="btn" style="flex:1; background:#ddd; color:#000" onclick="document.getElementById('summaryModal').style.display='none'">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fixX = (v) => -Math.abs(parseFloat(v || 0));
+    let calcResult = null;
+
+    function toggleLock(id) {
+        const e = document.getElementById(id + 'Edit'), s = document.getElementById(id + 'Show');
+        if(e.classList.contains('hidden')) { 
+            e.classList.remove('hidden'); 
+            s.classList.add('hidden'); 
+        } else {
+            const n = document.getElementById(id + 'Name').value || id;
+            const x = document.getElementById(id + 'X').value;
+            const y = document.getElementById(id + 'Y').value;
+            if(!x || !y) return alert("البيانات ناقصة");
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'N').innerText = n;
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'X').innerText = Math.abs(fixX(x)).toFixed(2);
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'Y').innerText = parseFloat(y).toFixed(2);
+            e.classList.add('hidden'); 
+            s.classList.remove('hidden');
+        }
+    }
+
+    window.onload = () => {
+        const searchConfigs = [
+            { id: 'ptAName', res: 'ptAResults', other: 'ptBName', pre: 'ptA' },
+            { id: 'ptBName', res: 'ptBResults', other: 'ptAName', pre: 'ptB' }
+        ];
+
+        searchConfigs.forEach(conf => {
+            const inp = document.getElementById(conf.id);
+            const resBox = document.getElementById(conf.res);
+
+            inp.addEventListener('input', () => {
+                const queryText = inp.value.toLowerCase().trim();
+                const otherVal = document.getElementById(conf.other).value.toLowerCase().trim();
+                if (!queryText) { resBox.style.display='none'; return; }
+
+                const keywords = queryText.split(/\s+/);
+                const db = JSON.parse(localStorage.getItem("pointsDB") || "[]");
+                const matches = db.filter(p => {
+                    const n = String(p.name).toLowerCase();
+                    const isMatch = keywords.every(kw => n.includes(kw));
+                    return isMatch && n !== otherVal;
+                });
+
+                if (matches.length > 0) {
+                    resBox.innerHTML = matches.slice(0, 15).map(p => `
+                        <div class="result-item" onclick="pickPt('${conf.id}','${p.name}',${p.x},${p.y},'${conf.res}','${conf.pre}')">
+                            ${p.name} <small style="color:blue">(${p.area || ''})</small>
+                        </div>
+                    `).join("");
+                    resBox.style.display = 'block';
+                } else { resBox.style.display = 'none'; }
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-wrap')) {
+                document.querySelectorAll('.results-box').forEach(b => b.style.display='none');
+            }
+        });
+    };
+
+    function pickPt(inpId, name, x, y, resId, pre) {
+        document.getElementById(inpId).value = name;
+        document.getElementById(pre + 'X').value = Math.abs(x);
+        document.getElementById(pre + 'Y').value = y;
+        document.getElementById(resId).style.display = 'none';
+    }
+
+    function calculateResection() {
+        const Ax = fixX(document.getElementById('ptAX').value);
+        const Ay = parseFloat(document.getElementById('ptAY').value);
+        const hzA = parseFloat(document.getElementById('ptAHz').value) || 0;
+
+        const Bx = fixX(document.getElementById('ptBX').value);
+        const By = parseFloat(document.getElementById('ptBY').value);
+        const HD = parseFloat(document.getElementById('ptBHD').value);
+        const hzB = parseFloat(document.getElementById('ptBHz').value);
+
+        if ([Ax, Ay, Bx, By, hzB, HD].some(isNaN) || HD <= 0) {
+            alert("يرجى التأكد من إدخال جميع الإحداثيات والمسافة والزاوية المقاسة.");
+            return;
+        }
+
+        const Hz = (hzB - hzA + 400) % 400;
+        const hzRad = (Hz * Math.PI) / 200;
+
+        const dX_AB = Ax - Bx;
+        const dY_AB = Ay - By;
+        const dAB = Math.hypot(dX_AB, dY_AB);
+
+        if (dAB === 0) {
+            alert("النقطتان A و B لهما نفس الإحداثيات!");
+            return;
+        }
+
+        const sinRatio = (HD * Math.sin(hzRad)) / dAB;
+        if (Math.abs(sinRatio) > 1.0) {
+            alert("القياسات الحقلية غير متناسقة هندسياً لإغلاق المثلث.");
+            return;
+        }
+
+        const azBA = (Math.atan2(dX_AB, dY_AB) * 200 / Math.PI + 400) % 400;
+        const deltaAngle = (Math.asin(sinRatio) * 200 / Math.PI);
+
+        const azA = (azBA + (200 - deltaAngle) + 400) % 400;
+        const azB = (azA + Hz) % 400;
+        const azB_rad = (azB * Math.PI) / 200;
+
+        const Sx = Bx - HD * Math.sin(azB_rad);
+        const Sy = By - HD * Math.cos(azB_rad);
+        const distA = Math.hypot(Ax - Sx, Ay - Sy);
+
+        calcResult = {
+            x: Math.abs(Sx),
+            y: Sy,
+            azA: azA,
+            distA: distA
+        };
+
+        document.getElementById('resX').innerText = calcResult.x.toFixed(2);
+        document.getElementById('resY').innerText = calcResult.y.toFixed(2);
+        document.getElementById('resAz').innerText = calcResult.azA.toFixed(4) + ' gon';
+        document.getElementById('resDistA').innerText = calcResult.distA.toFixed(2) + ' م';
+
+        document.getElementById('resCard').classList.remove('hidden');
+    }
+
+    function saveToDB() {
+        if (!calcResult) return;
+        let n = prompt("ادخل اسم نقطة الوقوف:", "STN_1");
+        if (!n) return;
+
+        let db = JSON.parse(localStorage.getItem("pointsDB") || "[]");
+        const newPt = {
+            name: n,
+            area: "وقوف إيزوليه",
+            x: parseFloat(calcResult.x.toFixed(2)),
+            y: parseFloat(calcResult.y.toFixed(2)),
+            desc: `حساب تقاطع خلفي - ${new Date().toLocaleDateString('ar-EG')}`,
+            type: 'manual'
+        };
+
+        const combined = [...db, newPt];
+        const unique = Array.from(new Set(combined.map(a => String(a.name).toLowerCase())))
+                            .map(name => combined.find(a => String(a.name).toLowerCase() === name));
+        
+        unique.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar', { sensitivity: 'base', numeric: true }));
+        
+        localStorage.setItem("pointsDB", JSON.stringify(unique));
+        alert(`✅ تم حفظ النقطة "${n}" في قاعدة البيانات!`);
+    }
+
+    function showSummary() {
+        if (!calcResult) return;
+        let txt = `========================================\n`;
+        txt += `   تقرير الإيزوليه المعكوس - م. عمار يوسف\n`;
+        txt += `   مجلد الحفظ: AmmarSmartSurvey\n`;
+        txt += `========================================\n`;
+        txt += `التاريخ     : ${new Date().toLocaleDateString('ar-EG')}\n`;
+        txt += `الصفر (A)   : ${document.getElementById("ptAName").value || "A"} (X:${document.getElementById("ptAX").value}, Y:${document.getElementById("ptAY").value})\n`;
+        txt += `المقاس (B)  : ${document.getElementById("ptBName").value || "B"} (X:${document.getElementById("ptBX").value}, Y:${document.getElementById("ptBY").value})\n`;
+        txt += `----------------------------------------\n`;
+        txt += `نقطة الوقوف المحسوبة (STN):\n`;
+        txt += `X (شرقيات): ${calcResult.x.toFixed(2)}\n`;
+        txt += `Y (شماليات): ${calcResult.y.toFixed(2)}\n`;
+        txt += `انحراف الصفر: ${calcResult.azA.toFixed(4)} gon\n`;
+        txt += `المسافة إلى A: ${calcResult.distA.toFixed(2)} م\n`;
+        txt += `========================================\n`;
+
+        document.getElementById("summaryText").innerText = txt;
+        document.getElementById("summaryModal").style.display = "block";
+    }
+
+    function downloadTXT() {
+        const content = document.getElementById("summaryText").innerText;
+        const BOM = '\uFEFF'; 
+        const blob = new Blob([BOM + content], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `AmmarSmartSurvey_Resection_${Date.now()}.txt`;
+        link.click();
+    }
+</script>
+</body>
+</html>

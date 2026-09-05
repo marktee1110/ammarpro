@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🗺️ DWW TO KML AMMAR YOUSEF</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0f172a; color: #fff; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        header {
+            background: #0f172a; color: #fff; padding: 6px 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #000; z-index: 1001; flex-shrink: 0; direction: ltr; text-align: left;
+        }
+        .header-title { font-size: 11px; font-weight: 900; color: #38bdf8; }
+        
+        .control-panel {
+            background: #ffffff; padding: 6px; border-bottom: 3px solid #000;
+            display: flex; gap: 4px; align-items: center; flex-shrink: 0; z-index: 1000; flex-wrap: wrap; direction: ltr;
+        }
+        .file-picker-wrapper { position: relative; overflow: hidden; display: block; flex: 1; min-width: 90px; }
+        .file-picker-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .btn-file-custom {
+            background: #0f172a; color: #fff; border: 2px solid #000; border-radius: 6px;
+            padding: 6px 4px; font-size: 9px; font-weight: 900; width: 100%; text-align: center;
+            display: block; box-sizing: border-box; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-action {
+            background: #16a34a; color: #fff; border: 2px solid #000; border-radius: 6px;
+            padding: 6px 5px; font-size: 9px; font-weight: 900; cursor: pointer; white-space: nowrap;
+        }
+        .btn-action.shift-btn { background: #ca8a04; }
+        .btn-action.meas-btn { background: #9333ea; }
+        .btn-action.coord-btn { background: #2563eb; }
+
+        #mapWrapper { flex: 1; width: 100%; height: 100%; position: relative; min-height: 0; }
+        #dxfMapContainer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        .map-center-crosshair {
+            display: none; position: absolute; top: 50%; left: 50%; width: 36px; height: 36px;
+            transform: translate(-50%, -50%); z-index: 2000; pointer-events: none;
+            justify-content: center; align-items: center; color: #2563eb; font-size: 26px; font-weight: bold;
+            text-shadow: 0 0 4px #fff, 0 0 4px #fff;
+        }
+        .map-center-crosshair.active { display: flex; }
+
+        .measure-bottom-panel {
+            display: none; position: absolute; bottom: 0; left: 0; right: 0;
+            background: #ffffff; color: #000; border-top: 3px solid #000;
+            padding: 12px 16px; z-index: 2000; box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+            border-top-left-radius: 16px; border-top-right-radius: 16px; direction: ltr;
+        }
+        .measure-bottom-panel.active { display: block; }
+        .measure-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; font-size: 13px; }
+        .measure-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-add-point {
+            background: #2563eb; color: #fff; border: none; padding: 10px 20px;
+            border-radius: 24px; font-weight: bold; font-size: 13px; cursor: pointer; flex: 1; box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+        }
+        .btn-meas-control {
+            background: #f1f5f9; color: #0f172a; border: 1.5px solid #cbd5e1; padding: 8px 12px;
+            border-radius: 20px; font-weight: bold; font-size: 11px; cursor: pointer;
+        }
+
+        .coord-display-box {
+            display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+            z-index: 2000; background: rgba(255,255,255,0.95); color: #000; border: 2px solid #000;
+            padding: 8px 14px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            font-size: 11px; font-weight: bold; text-align: center; direction: ltr;
+        }
+        .coord-display-box.active { display: block; }
+
+        .map-layers-box { position: absolute; top: 12px; right: 12px; z-index: 1000; }
+        .map-layer-toggle {
+            width: 40px; height: 40px; background: #ffffff; border: 2px solid #000;
+            border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px;
+        }
+        .map-layers-menu {
+            display: none; position: absolute; top: 45px; right: 0;
+            background: #fff; color: #000; border: 2px solid #000; border-radius: 6px;
+            padding: 5px; width: 120px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 10px; font-weight: bold;
+        }
+        .map-layers-menu.active { display: block; }
+        .map-layer-option { padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; text-align: center; }
+
+        .cad-layers-container { position: absolute; top: 60px; right: 12px; z-index: 1000; }
+        .cad-layers-btn { background: #0f172a; color: #38bdf8; border: 2px solid #000; padding: 5px 8px; font-size: 9px; font-weight: 900; border-radius: 6px; cursor: pointer; }
+        .cad-layers-panel {
+            display: none; position: absolute; top: 32px; right: 0;
+            background: rgba(255,255,255,0.98); color: #000; border: 2px solid #000;
+            border-radius: 6px; padding: 6px; width: 180px; max-height: 40vh; overflow-y: auto; font-size: 10px; font-weight: bold;
+        }
+        .cad-layers-panel.active { display: block; }
+
+        .google-earth-gps-btn {
+            position: absolute; bottom: 85px; right: 15px; z-index: 1000;
+            width: 44px; height: 44px; background: #ffffff; border: 2px solid #cbd5e1;
+            border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+        }
+        .gps-icon-inner {
+            width: 22px; height: 22px; border: 2.5px solid #2563eb; border-radius: 50%;
+            position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        .gps-icon-inner::after {
+            content: ''; width: 6px; height: 6px; background: #2563eb; border-radius: 50%; position: absolute;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+  <div style="font-size: 9px; font-weight: bold; background: rgba(255,255,255,0.15); padding: 2px 5px; border-radius: 3px; direction: ltr;">AMMAR YOUSEF</div>
+  <div class="header-title">🗺️ DWW TO KML AMMAR YOUSEF</div>
+</header>
+
+<div class="control-panel">
+  <div class="file-picker-wrapper">
+    <button class="btn-file-custom" id="fileNameLabel">📁 ملف DXF</button>
+    <input type="file" id="dxfFileInput" onchange="handleFileSelected(event)">
+  </div>
+  <button class="btn-action coord-btn" onclick="toggleCoordTool()" id="coordBtn">📌 إحداثية</button>
+  <button class="btn-action meas-btn" onclick="toggleMeasureTool()" id="measBtn">📏 قياس</button>
+  <button class="btn-action shift-btn" onclick="toggleShiftMenu()">🔄 إزاحة</button>
+  <button class="btn-action" onclick="exportKML()" id="exportBtn" disabled>💾 KML</button>
+</div>
+
+<div id="mapWrapper">
+  <div id="dxfMapContainer"></div>
+
+  <div class="map-center-crosshair" id="mapCrosshair">┼</div>
+
+  <div class="coord-display-box" id="coordDisplayBox">
+    <div id="coordText">إحداثيات المنتصف (X, Y)...</div>
+  </div>
+
+  <div class="measure-bottom-panel" id="measureBottomPanel">
+    <div class="measure-header">
+      <span id="totalDistanceText">المسافة الكلية: 0.00 متر</span>
+      <button onclick="toggleMeasureTool()" style="background:none; border:none; font-size:16px; font-weight:bold; cursor:pointer;">✕</button>
+    </div>
+    <div class="measure-actions">
+      <button class="btn-add-point" onclick="addMeasurePoint()">+ Add point</button>
+      <button class="btn-meas-control" onclick="undoMeasurePoint()">تراجع</button>
+      <button class="btn-meas-control" onclick="clearMeasure()">إلغاء</button>
+    </div>
+  </div>
+
+  <div class="map-layers-box">
+    <div class="map-layer-toggle" onclick="toggleMapMenu()">🗺️</div>
+    <div class="map-layers-menu" id="mapLayersMenu">
+      <div class="map-layer-option" onclick="setBaseMap('satellite')">🛰️ فضائية</div>
+      <div class="map-layer-option" onclick="setBaseMap('streets')">🛣️ شوارع</div>
+    </div>
+  </div>
+
+  <div class="cad-layers-container">
+    <button class="cad-layers-btn" onclick="toggleCadLayersMenu()">📂 الطبقات ▾</button>
+    <div class="cad-layers-panel" id="cadLayersPanel">
+      <div style="font-weight:900; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:4px; display:flex; justify-content:space-between;">
+        <span>طبقات الأوتوكاد</span><span id="layerCountBadge" style="color:#2563eb;">0</span>
+      </div>
+      <div id="cadLayersList"></div>
+    </div>
+  </div>
+
+  <div class="google-earth-gps-btn" onclick="locateUserGPS()" title="الموقع الحي GPS">
+    <div class="gps-icon-inner"></div>
+  </div>
+
+  <div class="shift-panel" id="shiftPanelContainer" style="display:none; position:absolute; top:55px; left:12px; z-index:1000; background:#fff; color:#000; border:2px solid #000; padding:8px; border-radius:6px; width:150px; font-size:10px; font-weight:bold;">
+    <div>dX: <input type="number" id="shiftX" value="0" style="width:100%; text-align:center;"></div>
+    <div>dY: <input type="number" id="shiftY" value="0" style="width:100%; text-align:center; margin-top:4px;"></div>
+    <button onclick="applyShift()" style="width:100%; background:#2563eb; color:#fff; border:none; padding:4px; margin-top:6px; border-radius:3px; cursor:pointer;">تطبيق الإزاحة</button>
+    <button onclick="resetShift()" style="width:100%; background:#dc2626; color:#fff; border:none; padding:4px; margin-top:4px; border-radius:3px; cursor:pointer;">إعادة للوضع الأساسي</button>
+  </div>
+</div>
+
+<script>
+    let dxfMap = null;
+    let dxfMasterGroup = null;
+    let layerGroupsMap = {};
+    let rawEntities = [];
+    let currentKmlContent = "";
+    let baseLayers = {};
+    let currentBaseLayer = null;
+    let allVerticesData = [];
+    let lastCalculatedBounds = null;
+    
+    let measureActive = false;
+    let measurePoints = [];
+    let measurePolyline = null;
+    let measureTempLine = null;
+    let measureMarkers = [];
+
+    let coordActive = false;
+    let userLocationMarker = null;
+
+    function initMap() {
+        baseLayers['satellite'] = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21 });
+        baseLayers['streets'] = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 21 });
+
+        dxfMap = L.map('dxfMapContainer', { layers: [baseLayers['satellite']], zoomControl: false, touchZoom: true, dragging: true }).setView([34.5, 38.5], 7);
+        L.control.zoom({ position: 'bottomleft' }).addTo(dxfMap);
+        dxfMasterGroup = L.layerGroup().addTo(dxfMap);
+
+        dxfMap.on('move', function() {
+            if (coordActive) {
+                updateCenterCoordinateDisplay();
+            }
+            if (measureActive) {
+                updateLiveMeasureDynamic();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.map-layers-box')) document.getElementById('mapLayersMenu').classList.remove('active');
+            if (!e.target.closest('.cad-layers-container')) document.getElementById('cadLayersPanel').classList.remove('active');
+            if (!e.target.closest('.shift-panel') && !e.target.classList.contains('shift-btn')) document.getElementById('shiftPanelContainer').style.display = 'none';
+        });
+    }
+
+    function locateUserGPS() {
+        if (!navigator.geolocation) {
+            alert("⚠️ خاصية الموقع الجغرافي (GPS) غير مدعومة في متصفحك.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const latlng = [lat, lng];
+
+                dxfMap.setView(latlng, 19);
+
+                if (userLocationMarker) dxfMap.removeLayer(userLocationMarker);
+                userLocationMarker = L.circleMarker(latlng, {
+                    radius: 10,
+                    color: '#1d4ed8',
+                    fillColor: '#38bdf8',
+                    fillOpacity: 0.9,
+                    weight: 3
+                }).addTo(dxfMap);
+                
+                userLocationMarker.bindPopup("📍 موقعك الحالي في الحقل بدقة GPS").openPopup();
+            },
+            function(error) {
+                let errorMsg = "تعذر تحديد الموقع.";
+                if (error.code === error.PERMISSION_DENIED) {
+                    errorMsg = "❌ تم رفض إذن الوصول للموقع. يرجى تفعيل صلاحية الـ GPS من إعدادات المتصفح.";
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    errorMsg = "❌ معلومات الموقع غير متوفرة حالياً. تأكد من فتح الـ GPS بالجهاز.";
+                } else if (error.code === error.TIMEOUT) {
+                    errorMsg = "❌ انتهت مهلة طلب الموقع. حاول مرة أخرى.";
+                }
+                alert(errorMsg);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    function toggleCoordTool() {
+        coordActive = !coordActive;
+        measureActive = false;
+        document.getElementById('measureBottomPanel').classList.remove('active');
+        if (measureTempLine) { dxfMap.removeLayer(measureTempLine); measureTempLine = null; }
+        
+        const btn = document.getElementById('coordBtn');
+        const crosshair = document.getElementById('mapCrosshair');
+        const box = document.getElementById('coordDisplayBox');
+
+        if (coordActive) {
+            btn.style.background = '#dc2626';
+            crosshair.classList.add('active');
+            box.classList.add('active');
+            updateCenterCoordinateDisplay();
+        } else {
+            btn.style.background = '#2563eb';
+            crosshair.classList.remove('active');
+            box.classList.remove('active');
+        }
+    }
+
+    function updateCenterCoordinateDisplay() {
+        const center = dxfMap.getCenter();
+        let estX = 0, estY = 0;
+
+        if (allVerticesData.length > 0) {
+            let nearest = allVerticesData[0];
+            let minDist = dxfMap.distance(center, nearest.latlng);
+            for (let i = 1; i < allVerticesData.length; i++) {
+                let dist = dxfMap.distance(center, allVerticesData[i].latlng);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = allVerticesData[i];
+                }
+            }
+            let dxMeters = (center.lng - nearest.latlng[1]) * 111320 * Math.cos(center.lat * Math.PI / 180);
+            let dyMeters = (center.lat - nearest.latlng[0]) * 111320;
+            
+            estX = nearest.origX + dxMeters;
+            estY = nearest.origY + dyMeters;
+        } else {
+            estX = (center.lng - 39.151156) * 110000;
+            estY = (center.lat - 34.199572) * 110000;
+        }
+
+        document.getElementById('coordText').innerHTML = `
+            📌 <b>إحداثيات المنتصف (X, Y):</b><br>
+            X: <b>${estX.toFixed(3)}</b> | Y: <b>${estY.toFixed(3)}</b>
+        `;
+    }
+
+    function toggleMeasureTool() {
+        measureActive = !measureActive;
+        coordActive = false;
+        document.getElementById('coordDisplayBox').classList.remove('active');
+
+        const btn = document.getElementById('measBtn');
+        const crosshair = document.getElementById('mapCrosshair');
+        const panel = document.getElementById('measureBottomPanel');
+
+        if (measureActive) {
+            btn.style.background = '#dc2626';
+            crosshair.classList.add('active');
+            panel.classList.add('active');
+        } else {
+            btn.style.background = '#9333ea';
+            crosshair.classList.remove('active');
+            panel.classList.remove('active');
+            clearMeasure();
+        }
+    }
+
+    function addMeasurePoint() {
+        const centerLatLng = dxfMap.getCenter();
+        measurePoints.push(centerLatLng);
+
+        let marker = L.circleMarker(centerLatLng, { radius: 5, color: '#000', fillColor: '#2563eb', fillOpacity: 1, weight: 2 }).addTo(dxfMap);
+        measureMarkers.push(marker);
+
+        updateMeasureLine();
+    }
+
+    function undoMeasurePoint() {
+        if (measurePoints.length > 0) {
+            measurePoints.pop();
+            let marker = measureMarkers.pop();
+            if (marker) dxfMap.removeLayer(marker);
+            updateMeasureLine();
+        }
+    }
+
+    function clearMeasure() {
+        measurePoints = [];
+        measureMarkers.forEach(m => dxfMap.removeLayer(m));
+        measureMarkers = [];
+        if (measurePolyline) { dxfMap.removeLayer(measurePolyline); measurePolyline = null; }
+        if (measureTempLine) { dxfMap.removeLayer(measureTempLine); measureTempLine = null; }
+        document.getElementById('totalDistanceText').innerText = "المسافة الكلية: 0.00 متر";
+    }
+
+    function updateMeasureLine() {
+        if (measurePolyline) dxfMap.removeLayer(measurePolyline);
+
+        if (measurePoints.length > 0) {
+            measurePolyline = L.polyline(measurePoints, { color: '#2563eb', weight: 4 }).addTo(dxfMap);
+            calculateAndDisplayTotalDistance();
+        } else {
+            document.getElementById('totalDistanceText').innerText = "المسافة الكلية: 0.00 متر";
+        }
+    }
+
+    function updateLiveMeasureDynamic() {
+        if (measurePoints.length === 0) return;
+
+        const currentCenter = dxfMap.getCenter();
+        const tempPoints = [...measurePoints, currentCenter];
+
+        if (measureTempLine) dxfMap.removeLayer(measureTempLine);
+        
+        measureTempLine = L.polyline(tempPoints, { color: '#2563eb', weight: 2, dashArray: '5, 5', opacity: 0.8 }).addTo(dxfMap);
+
+        let liveDist = 0;
+        for (let i = 0; i < tempPoints.length - 1; i++) {
+            liveDist += dxfMap.distance(tempPoints[i], tempPoints[i+1]);
+        }
+        document.getElementById('totalDistanceText').innerText = `المسافة التراكمية الحية: ${liveDist.toFixed(2)} متر`;
+    }
+
+    function calculateAndDisplayTotalDistance() {
+        let totalDist = 0;
+        for (let i = 0; i < measurePoints.length - 1; i++) {
+            totalDist += dxfMap.distance(measurePoints[i], measurePoints[i+1]);
+        }
+        document.getElementById('totalDistanceText').innerText = `المسافة النهائية: ${totalDist.toFixed(2)} متر`;
+    }
+
+    function ammarEngineTransform(x, y) {
+        let x2 = x / 100000.0;
+        let y2 = y / 100000.0;
+        let lat = 34.1995728022708 + (-0.000109034258955 * x2) + (0.901919449198777 * y2) + (-0.004804938821993 * Math.pow(x2, 2)) + (-0.0000092638803 * x2 * y2) + (-0.0000619942778 * Math.pow(y2, 2)) + (-0.0000023827326 * Math.pow(x2, 3)) + (-0.0001079065784 * Math.pow(x2, 2) * y2) + (0.0000045190021 * x2 * Math.pow(y2, 2)) + (-0.000188294226 * Math.pow(y2, 3));
+        let lon = 39.1511562415421 + (1.08544552373339 * x2) + (0.000141152839858 * y2) + (-0.0000227915953 * Math.pow(x2, 2)) + (0.01158568614149 * x2 * y2) + (0.0000184425821 * Math.pow(y2, 2)) + (-0.0000667439376 * Math.pow(x2, 3)) + (0.0000171280222 * Math.pow(x2, 2) * y2) + (0.0001975916378 * x2 * Math.pow(y2, 2)) + (-0.0000060696491 * Math.pow(y2, 3));
+        return { lat: lat, lon: lon };
+    }
+
+    function handleFileSelected(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        document.getElementById("fileNameLabel").innerText = `📁 ${file.name}`;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            parseAndStoreCad(e.target.result);
+            renderCadEntities(0, 0);
+            document.getElementById("exportBtn").disabled = false;
+        };
+        reader.readAsText(file);
+    }
+
+    function parseAndStoreCad(text) {
+        const lines = text.split(/\r?\n/);
+        rawEntities = [];
+        let currentType = null;
+        let currentLayer = "0";
+        let entityData = { x1: null, y1: null, x2: null, y2: null, px: null, py: null, cx: null, cy: null, r: null, textVal: "", xs: [], ys: [] };
+        let code = "";
+
+        function commit() {
+            if (!currentType) return;
+            rawEntities.push({ type: currentType, layer: currentLayer, data: { ...entityData } });
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+            let lineVal = lines[i].trim();
+            if (i % 2 === 0) {
+                code = lineVal;
+            } else {
+                let val = parseFloat(lineVal);
+                if (code === "0") {
+                    commit();
+                    currentType = lineVal;
+                    currentLayer = "0";
+                    entityData = { x1: null, y1: null, x2: null, y2: null, px: null, py: null, cx: null, cy: null, r: null, textVal: "", xs: [], ys: [] };
+                } else if (currentType) {
+                    if (code === "8") currentLayer = lineVal;
+                    if (!isNaN(val)) {
+                        if (currentType === "LINE") {
+                            if (code === "10") entityData.x1 = val;
+                            if (code === "20") entityData.y1 = val;
+                            if (code === "11") entityData.x2 = val;
+                            if (code === "21") entityData.y2 = val;
+                        } else if (currentType === "LWPOLYLINE" || currentType === "POLYLINE") {
+                            if (code === "10") entityData.xs.push(val);
+                            if (code === "20") entityData.ys.push(val);
+                        } else if (currentType === "POINT" || currentType === "TEXT" || currentType === "MTEXT") {
+                            if (code === "10") entityData.px = val;
+                            if (code === "20") entityData.py = val;
+                        } else if (code === "40") {
+                            if (currentType === "CIRCLE") entityData.r = val;
+                        }
+                    }
+                    if ((currentType === "TEXT" || currentType === "MTEXT") && (code === "1" || code === "3")) {
+                        entityData.textVal = lineVal;
+                    }
+                    if (currentType === "CIRCLE") {
+                        if (code === "10") entityData.cx = val;
+                        if (code === "20") entityData.cy = val;
+                    }
+                }
+            }
+        }
+        commit();
+    }
+
+    function renderCadEntities(shiftX, shiftY) {
+        dxfMasterGroup.clearLayers();
+        layerGroupsMap = {};
+        allVerticesData = [];
+        let geometryPointsForBounds = [];
+
+        function getOrCreateLayerGroup(layerName) {
+            if (!layerGroupsMap[layerName]) {
+                layerGroupsMap[layerName] = L.layerGroup().addTo(dxfMasterGroup);
+            }
+            return layerGroupsMap[layerName];
+        }
+
+        function getLayerColor(layerName) {
+            let hash = 0;
+            for (let i = 0; i < layerName.length; i++) hash = layerName.charCodeAt(i) + ((hash << 5) - hash);
+            return '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
+        }
+
+        rawEntities.forEach(ent => {
+            const targetGroup = getOrCreateLayerGroup(ent.layer);
+            const color = getLayerColor(ent.layer);
+            const d = ent.data;
+            let layerPopupMsg = `📂 الطبقة (Layer): <b>${ent.layer}</b><br>⚙️ العنصر: ${ent.type}`;
+
+            if (ent.type === "LINE") {
+                if (d.x1 !== null && d.y1 !== null && d.x2 !== null && d.y2 !== null) {
+                    let curX1 = d.x1 + shiftX, curY1 = d.y1 + shiftY;
+                    let curX2 = d.x2 + shiftX, curY2 = d.y2 + shiftY;
+                    
+                    if (Math.abs(curX1) > 100 && Math.abs(curY1) > 100) {
+                        let p1 = ammarEngineTransform(curX1, curY1);
+                        let p2 = ammarEngineTransform(curX2, curY2);
+                        if (!isNaN(p1.lat) && p1.lat > 25 && p1.lat < 40 && p1.lon > 30 && p1.lon < 48) {
+                            let line = L.polyline([[p1.lat, p1.lon], [p2.lat, p2.lon]], { color: color, weight: 2.5 });
+                            line.bindPopup(layerPopupMsg);
+                            line.addTo(targetGroup);
+
+                            geometryPointsForBounds.push([p1.lat, p1.lon], [p2.lat, p2.lon]);
+                            allVerticesData.push({ latlng: [p1.lat, p1.lon], origX: curX1, origY: curY1 });
+                            allVerticesData.push({ latlng: [p2.lat, p2.lon], origX: curX2, origY: curY2 });
+                        }
+                    }
+                }
+            } else if (ent.type === "LWPOLYLINE" || ent.type === "POLYLINE") {
+                if (d.xs.length > 0 && d.xs.length === d.ys.length) {
+                    let polyCoords = [];
+                    for (let k = 0; k < d.xs.length; k++) {
+                        let curX = d.xs[k] + shiftX, curY = d.ys[k] + shiftY;
+                        if (Math.abs(curX) > 100 && Math.abs(curY) > 100) {
+                            let p = ammarEngineTransform(curX, curY);
+                            if (!isNaN(p.lat) && p.lat > 25 && p.lat < 40 && p.lon > 30 && p.lon < 48) {
+                                polyCoords.push([p.lat, p.lon]);
+                                geometryPointsForBounds.push([p.lat, p.lon]);
+                                allVerticesData.push({ latlng: [p.lat, p.lon], origX: curX, origY: curY });
+                            }
+                        }
+                    }
+                    if (polyCoords.length > 1) {
+                        let poly = L.polyline(polyCoords, { color: color, weight: 3 });
+                        poly.bindPopup(layerPopupMsg);
+                        poly.addTo(targetGroup);
+                    }
+                }
+            } else if (ent.type === "TEXT" || ent.type === "MTEXT") {
+                if (d.px !== null && d.py !== null && d.textVal.trim() !== "") {
+                    let curX = d.px + shiftX, curY = d.py + shiftY;
+                    if (Math.abs(curX) > 100 && Math.abs(curY) > 100) {
+                        let p = ammarEngineTransform(curX, curY);
+                        if (!isNaN(p.lat) && p.lat > 25 && p.lat < 40 && p.lon > 30 && p.lon < 48) {
+                            geometryPointsForBounds.push([p.lat, p.lon]);
+                            let textIcon = L.divIcon({
+                                className: 'cad-text-marker',
+                                html: `<div style="background: #ffffff; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; color: #000; border: 1.2px solid #000; white-space: nowrap; transform: translate(-50%, -50%); box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: inline-block;">${d.textVal}</div>`,
+                                iconSize: [0, 0]
+                            });
+                            let mText = L.marker([p.lat, p.lon], { icon: textIcon });
+                            mText.bindPopup(layerPopupMsg + `<br>📝 النص: ${d.textVal}`);
+                            mText.addTo(targetGroup);
+                        }
+                    }
+                }
+            }
+        });
+
+        renderCadLayersControl();
+
+        if (geometryPointsForBounds.length > 0) {
+            lastCalculatedBounds = L.latLngBounds(geometryPointsForBounds);
+            dxfMap.fitBounds(lastCalculatedBounds, { padding: [40, 40], maxZoom: 20 });
+        } else {
+            alert("⚠️ تنبيه: لم يتم رصد إحداثيات هندسية صالحة.");
+        }
+
+        currentKmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document></Document>\n</kml>`;
+    }
+
+    function toggleMapMenu() { document.getElementById('mapLayersMenu').classList.toggle('active'); }
+    function setBaseMap(type) {
+        if (currentBaseLayer) dxfMap.removeLayer(currentBaseLayer);
+        currentBaseLayer = baseLayers[type];
+        dxfMap.addLayer(currentBaseLayer);
+        document.getElementById('mapLayersMenu').classList.remove('active');
+    }
+    function toggleCadLayersMenu() { document.getElementById('cadLayersPanel').classList.toggle('active'); }
+    function toggleShiftMenu() {
+        const panel = document.getElementById('shiftPanelContainer');
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function applyShift() {
+        let sx = parseFloat(document.getElementById("shiftX").value) || 0;
+        let sy = parseFloat(document.getElementById("shiftY").value) || 0;
+        renderCadEntities(sx, sy);
+        document.getElementById('shiftPanelContainer').style.display = 'none';
+    }
+
+    function resetShift() {
+        document.getElementById("shiftX").value = 0;
+        document.getElementById("shiftY").value = 0;
+        renderCadEntities(0, 0);
+        if (lastCalculatedBounds) {
+            dxfMap.fitBounds(lastCalculatedBounds, { padding: [40, 40], maxZoom: 20 });
+        }
+        document.getElementById('shiftPanelContainer').style.display = 'none';
+    }
+
+    function exportKML() {
+        if (!currentKmlContent || rawEntities.length === 0) {
+            alert("⚠️ تنبيه: لا يوجد عناصر هندسية للتصدير حالياً ضمن مجلد AmmarSmartSurvey.");
+            return;
+        }
+
+        let fileNameInput = prompt("💾 أدخل اسم ملف الـ KML:", "DWW_AMMAR_YOUSEF");
+        if (!fileNameInput || fileNameInput.trim() === "") return;
+
+        let cleanFileName = fileNameInput.trim().replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, "_");
+        if (!cleanFileName.toLowerCase().endsWith(".kml")) {
+            cleanFileName += ".kml";
+        }
+
+        let kmlData = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        kmlData += `<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n`;
+        kmlData += `  <name>AmmarSmartSurvey_${cleanFileName}</name>\n`;
+        kmlData += `  <description>Exported by DWW TO KML AMMAR YOUSEF - AmmarSmartSurvey</description>\n`;
+
+        rawEntities.forEach(ent => {
+            const d = ent.data;
+            if (ent.type === "LINE" && d.x1 !== null && d.y1 !== null && d.x2 !== null && d.y2 !== null) {
+                let p1 = ammarEngineTransform(d.x1, d.y1);
+                let p2 = ammarEngineTransform(d.x2, d.y2);
+                if (!isNaN(p1.lat)) {
+                    kmlData += `  <Placemark>\n`;
+                    kmlData += `    <name>Line [Layer: ${ent.layer}]</name>\n`;
+                    kmlData += `    <LineString><coordinates>${p1.lon},${p1.lat},0 ${p2.lon},${p2.lat},0</coordinates></LineString>\n`;
+                    kmlData += `  </Placemark>\n`;
+                }
+            } else if ((ent.type === "TEXT" || ent.type === "MTEXT") && d.px !== null && d.py !== null && d.textVal.trim() !== "") {
+                let p = ammarEngineTransform(d.px, d.py);
+                if (!isNaN(p.lat)) {
+                    kmlData += `  <Placemark>\n`;
+                    kmlData += `    <name>${d.textVal}</name>\n`;
+                    kmlData += `    <Point><coordinates>${p.lon},${p.lat},0</coordinates></Point>\n`;
+                    kmlData += `  </Placemark>\n`;
+                }
+            }
+        });
+
+        kmlData += `</Document>\n</kml>`;
+
+        const blob = new Blob([kmlData], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AmmarSmartSurvey_${cleanFileName}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function renderCadLayersControl() {
+        const container = document.getElementById("cadLayersList");
+        container.innerHTML = "";
+        const layerNames = Object.keys(layerGroupsMap);
+        document.getElementById("layerCountBadge").innerText = layerNames.length;
+        layerNames.forEach(name => {
+            const safeName = name.replace(/'/g, "\\'");
+            container.innerHTML += `
+                <label style="display:flex; align-items:center; gap:5px; margin-bottom:4px; cursor:pointer;">
+                  <input type="checkbox" checked onchange="toggleCadLayer('${safeName}', this)">
+                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${name}">${name}</span>
+                </label>`;
+        });
+    }
+
+    function toggleCadLayer(layerName, checkbox) {
+        if (!layerGroupsMap[layerName]) return;
+        if (checkbox.checked) dxfMap.addLayer(layerGroupsMap[layerName]);
+        else dxfMap.removeLayer(layerGroupsMap[layerName]);
+    }
+
+    window.onload = () => { initMap(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="ar" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>🌐 تحويل الإحداثيات والتوقيع الصوتي - م. عمار يوسف</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate.min.js"></script>
+  <script src="https://unpkg.com/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="https://unpkg.com/leaflet.offline@2.2.0/dist/leaflet.offline.min.js"></script>
+
+  <style>
+    :root{--main:#4f46e5;--danger:#dc2626;--ok:#16a34a;--bg:#f1f5f9}
+    body, html {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: #000; direction: ltr; text-align: left;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    
+    header {
+      background: #0f172a; color: #fff; padding: 6px 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      flex-shrink: 0; border-bottom: 2px solid #000;
+    }
+    .header-title {
+      font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .btn-nav-home {
+      color: #fff; text-decoration: none; font-size: 11px; font-weight: bold;
+      background: rgba(255,255,255,0.15); padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .input-panel {
+      background: #fff; padding: 6px 8px; border-bottom: 2px solid #000;
+      display: flex; gap: 6px; align-items: center; flex-shrink: 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .inputs-grid {
+      display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0;
+    }
+    .row-inputs {
+      display: flex; gap: 4px;
+    }
+    .field-input {
+      padding: 6px 6px; border: 2px solid #000; border-radius: 6px;
+      font-size: 14px; font-weight: 900; width: 100%; box-sizing: border-box;
+      background: #fff !important; color: #000 !important;
+    }
+    .btn-convert {
+      background: #000; color: #fff; border: 2px solid #000; border-radius: 6px;
+      font-size: 15px; font-weight: 900; padding: 0 14px; height: 100%; min-height: 64px;
+      cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-convert:active { background: #334155; }
+    
+    .btn-save-sess-quick {
+      background: #059669; color: #fff; border: 2px solid #000; border-radius: 6px;
+      font-size: 12px; font-weight: 900; padding: 0 8px; cursor: pointer; white-space: nowrap;
+    }
+
+    .action-subbar {
+      background: #e2e8f0; padding: 4px 8px; display: flex; justify-content: space-between;
+      align-items: center; gap: 4px; border-bottom: 1.5px solid #000; flex-shrink: 0;
+    }
+    .subbar-btn {
+      flex: 1; padding: 5px 4px; font-size: 11px; font-weight: 900; border-radius: 5px;
+      border: 1.5px solid #000; cursor: pointer; text-align: center; white-space: nowrap;
+    }
+
+    #mapWrapper {
+      flex: 1; width: 100%; height: 100%; position: relative; min-height: 0;
+    }
+    #satMapContainer {
+      width: 100%; height: 100%;
+    }
+
+    .map-fab-container {
+      position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
+    }
+    .fab-btn {
+      background: #ffffff; border: 2px solid #000; border-radius: 50%;
+      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35); cursor: pointer;
+    }
+    .fab-btn:active { transform: scale(0.92); }
+    .fab-btn svg { width: 24px; height: 24px; fill: #444; }
+    .fab-btn.active svg { fill: #1a73e8; }
+    
+    .north-compass-btn {
+      background: #ffffff; border: 2px solid #000; border-radius: 50%;
+      width: 48px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35); cursor: pointer; font-weight: 900; font-size: 10px;
+    }
+    .north-compass-arrow {
+      width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-bottom: 20px solid #dc2626; margin-bottom: 2px; transition: transform 0.1s linear;
+    }
+
+    .user-loc-pulse {
+      width: 15px; height: 15px; background-color: #1a73e8; border-radius: 50%;
+      border: 3px solid #ffffff; box-shadow: 0 0 10px rgba(26,115,232,0.8);
+    }
+
+    .modal {
+      display: none; position: fixed; z-index: 10000; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto;
+    }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 12px; width: 92%; max-width: 550px;
+      border-radius: 8px; border: 2px solid #000; box-sizing: border-box;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000;
+      padding-bottom: 6px; margin-bottom: 10px;
+    }
+    .modal-close-btn {
+      background: #dc2626; color: #fff; border: 1.5px solid #000; border-radius: 5px;
+      font-weight: 900; font-size: 16px; padding: 2px 10px; cursor: pointer;
+    }
+
+    .tool-card {
+      background: #f8fafc; border: 1.5px solid #000; border-radius: 6px; padding: 8px;
+      margin-bottom: 8px;
+    }
+    .tool-card-title {
+      font-weight: 900; font-size: 12px; margin-bottom: 6px; display: block; color: #0f172a;
+    }
+
+    .pts-table {
+      width: 100%; border-collapse: collapse; font-size: 12px; font-weight: bold; text-align: center;
+    }
+    .pts-table th { background: #0f172a; color: #fff; padding: 5px 3px; border: 1px solid #000; font-size: 11px; }
+    .pts-table td { padding: 5px 3px; border: 1px solid #000; background: #fff; }
+    .table-btn {
+      border: 1px solid #000; border-radius: 4px; padding: 2px 4px; font-size: 11px; cursor: pointer;
+    }
+
+    .map-pt-label {
+      background: rgba(255, 255, 255, 0.95) !important; border: 1.5px solid #000 !important;
+      color: #000 !important; font-weight: 900 !important; font-size: 11px !important;
+      padding: 1px 4px !important; border-radius: 4px !important;
+    }
+    .map-pt-coord-card {
+      background: rgba(15, 23, 42, 0.92) !important; border: 1px solid #38bdf8 !important;
+      color: #ffffff !important; font-family: monospace !important; font-size: 10px !important;
+      padding: 1px 5px !important; border-radius: 4px !important; text-align: left !important;
+    }
+    .mode-btn { background: #334155; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 3px 5px; font-size: 11px; cursor: pointer; font-weight: bold; }
+    .mode-btn.active { background: #2563eb; border-color: #93c5fd; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>
+  <div class="header-title">🌐 تحويل الإحداثيات - م. عمار يوسف</div>
+</header>
+
+<div class="input-panel">
+  <div class="inputs-grid">
+    <div style="display:flex; gap:4px;">
+      <input id="ptName" class="field-input" placeholder="اسم / رقم النقطة" style="flex:1;">
+      <button onclick="saveCurrentSession()" class="btn-save-sess-quick" title="حفظ النقاط الحالية كجلسة باسم">💾 جلسة</button>
+    </div>
+    <div class="row-inputs">
+      <input id="ptX" class="field-input" type="number" placeholder="X" onkeypress="handleKey(event, 'ptY')" inputmode="decimal">
+      <input id="ptY" class="field-input" type="number" placeholder="Y" onkeypress="handleKey(event, 'btnAdd')" inputmode="decimal">
+    </div>
+  </div>
+  <button id="btnAdd" onclick="addCoordinatePoint()" class="btn-convert">➕ تحويل</button>
+</div>
+
+<div class="action-subbar">
+  <button onclick="toggleModal('toolsModal')" class="subbar-btn" style="background:#ca8a04; color:#fff;">⚙️ الأدوات والخيارات</button>
+  <button onclick="toggleModal('tableModal')" class="subbar-btn" id="btnTableBadge" style="background:#0284c7; color:#fff;">📋 الجدول (0)</button>
+  
+  <select onchange="openExternalApp(this)" class="subbar-btn" style="background:#16a34a; color:#fff; border:1.5px solid #000; font-weight:900; text-align-last:center;">
+    <option value="" style="color:#000; background:#fff;">🗺️ فتح باستخدام...</option>
+    <option value="maps" style="color:#000; background:#fff;">🗺️ Google Maps</option>
+    <option value="earth" style="color:#000; background:#fff;">🌍 Google Earth</option>
+  </select>
+</div>
+
+<div id="mapWrapper">
+  <div id="satMapContainer"></div>
+
+  <div class="map-fab-container">
+    <div class="north-compass-btn" onclick="resetMapNorth()" title="العودة لاتجاه الشمال">
+      <div class="north-compass-arrow" id="compassArrow"></div>
+      <span style="font-size:9px; font-weight:900;">N</span>
+    </div>
+    <button class="fab-btn" id="gpsToggle" onclick="toggleGPS()" title="موقعي الحالي">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- نافذة الأدوات والخيارات -->
+<div id="toolsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0; font-size:15px; font-weight:900;">⚙️ خيارات الخريطة والجلسات</h3>
+      <button class="modal-close-btn" onclick="toggleModal('toolsModal')">✕</button>
+    </div>
+
+    <!-- كرت التوقيع الصوتي الجديد -->
+    <div class="tool-card" style="background:#e0f2fe; border-color:#0284c7;">
+      <span class="tool-card-title">🔊 التوقيع الصوتي الميداني:</span>
+      <div style="display:flex; gap:4px; align-items:center; margin-bottom:4px;">
+        <select id="audioTargetSelect" style="flex:1; padding:5px; font-weight:bold; border:1.5px solid #000; border-radius:5px; font-size:12px;">
+          <option value="">-- اختر نقطة لتوقيعها صوتياً --</option>
+        </select>
+        <button id="btnAudioToggle" onclick="toggleAudioStakeout()" style="background:#0284c7; color:#fff; border:1px solid #000; border-radius:5px; padding:5px 10px; font-weight:900; cursor:pointer;">تشغيل الصوت</button>
+      </div>
+      <div id="audioStatusBadge" style="font-size:11px; font-weight:bold; color:#0369a1;">التوجيه الصوتى متوقف. اختر نقطة وفعّله.</div>
+    </div>
+
+    <div class="tool-card" style="background:#f0fdf4; border-color:#16a34a;">
+      <span class="tool-card-title">📁 إدارة الجلسات المحفوظة:</span>
+      <div style="display:flex; gap:4px; margin-bottom:4px;">
+        <select id="sessionsDropdown" style="flex:1; padding:5px; font-weight:bold; border:1.5px solid #000; border-radius:5px; font-size:12px;" onchange="handleSessionSelection(this)">
+          <option value="">-- استرجاع جلسة سابقة --</option>
+          <option value="NEW_SESSION" style="font-weight:900; color:#16a34a;">➕ بدء جلسة جديدة</option>
+        </select>
+        <button onclick="deleteSelectedSession()" style="background:#fee2e2; border:1px solid #dc2626; color:#dc2626; border-radius:5px; padding:4px 8px; font-weight:bold; cursor:pointer;">حذف</button>
+      </div>
+      <div id="activeSessionBadge" style="font-size:11px; font-weight:bold; color:#047857;">الجلسة الحالية: جديدة (غير محفوظة)</div>
+    </div>
+
+    <div class="tool-card" style="background:#eff6ff; border-color:#2563eb;">
+      <span class="tool-card-title">🌍 تصدير البيانات:</span>
+      <button onclick="downloadKML()" style="width:100%; padding:8px; background:#16a34a; color:#fff; border:1px solid #000; border-radius:6px; font-weight:bold; font-size:12px; cursor:pointer;">💾 تصدير ملف KML (مجلد AmmarSmartSurvey)</button>
+    </div>
+
+    <div class="tool-card">
+      <span class="tool-card-title">👁️ بطاقات العرض فوق الخريطة:</span>
+      <div style="display:flex; gap:6px;">
+        <button onclick="togglePtNames()" id="btnToggleNames" style="flex:1; padding:6px; background:#16a34a; color:#fff; border:1px solid #000; border-radius:5px; font-weight:bold; font-size:11px; cursor:pointer;"># أرقام النقاط</button>
+        <button onclick="togglePtCoords()" id="btnToggleCoords" style="flex:1; padding:6px; background:#475569; color:#fff; border:1px solid #000; border-radius:5px; font-weight:bold; font-size:11px; cursor:pointer;">📍 الإحداثيات (X,Y)</button>
+      </div>
+    </div>
+
+    <div class="tool-card" style="background:#fefce8; border-color:#ca8a04;">
+      <span class="tool-card-title">✥ إزاحة المخطط بصرياً:</span>
+      <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+        <span>خطوة:</span>
+        <select id="shiftStepVal" style="padding:2px; font-weight:bold; border:1px solid #000; border-radius:4px; font-size:11px;">
+          <option value="0.2">0.2 م</option>
+          <option value="0.5" selected>0.5 م</option>
+          <option value="1.0">1.0 م</option>
+          <option value="2.0">2.0 م</option>
+        </select>
+        <button onclick="stepWholeShape(-1, 0)" style="padding:4px 8px; font-weight:bold; border:1px solid #000; border-radius:4px; cursor:pointer;">⬅️</button>
+        <button onclick="stepWholeShape(1, 0)" style="padding:4px 8px; font-weight:bold; border:1px solid #000; border-radius:4px; cursor:pointer;">➡️</button>
+        <button onclick="stepWholeShape(0, 1)" style="padding:4px 8px; font-weight:bold; border:1px solid #000; border-radius:4px; cursor:pointer;">⬆️</button>
+        <button onclick="stepWholeShape(0, -1)" style="padding:4px 8px; font-weight:bold; border:1px solid #000; border-radius:4px; cursor:pointer;">⬇️</button>
+        <span id="shiftStatusBadge" style="background:#fff; border:1px solid #ca8a04; padding:2px 5px; border-radius:4px; font-family:monospace; font-size:10px;">dX:0 dY:0</span>
+        <button onclick="resetVisualShift()" style="background:#dc2626; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">0</button>
+      </div>
+    </div>
+
+    <div class="tool-card" style="background:#fef2f2; border-color:#ef4444;">
+      <span class="tool-card-title">🚫 استبعاد نقطة من العرض:</span>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <select id="excludePointSelect" style="flex:1; padding:4px; border:1px solid #000; border-radius:4px; font-size:11px; font-weight:bold;" onchange="excludeSelectedPoint()">
+          <option value="">-- اختر نقطة لإخفائها --</option>
+        </select>
+        <button onclick="resetExcludedPoints()" style="background:#16a34a; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">إظهار الكل</button>
+      </div>
+    </div>
+
+    <div class="tool-card" style="background:#0f172a; color:#fff;">
+      <span class="tool-card-title" style="color:#fff;">🎯 التوجيه والملاحة:</span>
+      <div style="display:flex; gap:4px; align-items:center; margin-bottom:4px; flex-wrap:wrap;">
+        <select id="routeTargetSelect" style="flex:1; padding:4px; border-radius:4px; font-size:11px; font-weight:bold;" onchange="calculateRoute()">
+          <option value="">-- اختر هدفاً --</option>
+        </select>
+        <button class="mode-btn active" id="btnModeCar" onclick="setRoutingMode('driving')">🚗</button>
+        <button class="mode-btn" id="btnModeFoot" onclick="setRoutingMode('foot')">🚶</button>
+        <button class="mode-btn" id="btnModeDirect" onclick="setRoutingMode('direct')">📏</button>
+        <button onclick="clearRouting()" style="background:#dc2626; color:#fff; border:none; border-radius:4px; padding:3px 6px; cursor:pointer; font-size:10px;">إلغاء</button>
+      </div>
+      <div id="routeInfoBadge" style="display:none; font-size:11px; color:#38bdf8; font-family:monospace;"></div>
+    </div>
+
+    <div style="display:flex; gap:6px;">
+      <button onclick="saveCurrentAreaOffline()" id="btnSaveOffline" style="flex:1; padding:8px; background:#0284c7; color:#fff; border:1px solid #000; border-radius:6px; font-weight:bold; font-size:12px; cursor:pointer;">💾 حفظ الخريطة أوفلاين</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة جدول النقاط المحولة -->
+<div id="tableModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0; font-size:15px; font-weight:900;">📋 جدول النقاط المحولة</h3>
+      <button class="modal-close-btn" onclick="toggleModal('tableModal')">✕</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+      <button onclick="downloadTXT()" style="background:#0f172a; color:#fff; border:1px solid #000; padding:4px 8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">💾 تصدير TXT (مجلد AmmarSmartSurvey)</button>
+      <button onclick="clearAllPoints()" style="background:#fee2e2; border:1px solid #dc2626; color:#dc2626; border-radius:5px; padding:4px 8px; font-weight:bold; cursor:pointer;">مسح الكل</button>
+    </div>
+    <div style="overflow-x:auto; max-height: 60vh;">
+      <table class="pts-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>X</th>
+            <th>Y</th>
+            <th>Lat</th>
+            <th>Lon</th>
+            <th>Maps</th>
+            <th>حذف/ترتيب</th>
+          </tr>
+        </thead>
+        <tbody id="pointsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const fixX = (v) => -Math.abs(parseFloat(v || 0));
+  let convPoints = [];
+  let currentSessionName = "";
+  let currentSessionId = null;
+
+  let isAudioActive = false;
+  let audioWatchInterval = null;
+
+  function ammar_engine_transform(rawX, rawY) {
+    const x = -Math.abs(parseFloat(rawX));
+    const y = Math.abs(parseFloat(rawY));
+
+    const x2 = x / 100000.0;
+    const y2 = y / 100000.0;
+
+    const lat = (34.1995728022708 
+      + (-0.000109034258955 * x2) 
+      + (0.901919449198777 * y2) 
+      + (-0.004804938821993 * Math.pow(x2, 2)) 
+      + (-0.0000092638803 * x2 * y2) 
+      + (-0.0000619942778 * Math.pow(y2, 2)) 
+      + (-0.0000023827326 * Math.pow(x2, 3)) 
+      + (-0.0001079065784 * Math.pow(x2, 2) * y2) 
+      + (0.0000045190021 * x2 * Math.pow(y2, 2)) 
+      + (-0.0000188294226 * Math.pow(y2, 3)));
+
+    const lon = (39.1511562415421 
+      + (1.08544552373339 * x2) 
+      + (0.000141152839858 * y2) 
+      + (-0.0000227915953 * Math.pow(x2, 2)) 
+      + (0.01158568614149 * x2 * y2) 
+      + (0.0000184425821 * Math.pow(y2, 2)) 
+      + (-0.0000667439376 * Math.pow(x2, 3)) 
+      + (0.0171280222 * Math.pow(x2, 2) * y2 * 0.001) 
+      + (0.0001975916378 * x2 * Math.pow(y2, 2)) 
+      + (-0.0000060696491 * Math.pow(y2, 3)));
+
+    return { lat, lon };
+  }
+
+  let satMap = null;
+  let satTileLayer = null;
+  let satLayerGroup = null;
+
+  let showNamesOnMap = true;
+  let showCoordsOnMap = false;
+  let excludedPointNames = [];
+  let visualShiftX = 0.0;
+  let visualShiftY = 0.0;
+
+  let userMarker = null;
+  let accuracyCircle = null;
+  let watchId = null;
+  let isFirstGPS = true;
+  let currentUserLatLng = null;
+
+  let routingMode = 'driving';
+  let routePolyline = null;
+
+  function toggleModal(id) {
+    const el = document.getElementById(id);
+    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+  }
+
+  function handleKey(e, nextId) {
+    if (e.key === "Enter") {
+      if (nextId === 'btnAdd') addCoordinatePoint();
+      else document.getElementById(nextId).focus();
+    }
+  }
+
+  function openExternalApp(selectEl) {
+    const val = selectEl.value;
+    if (!val) return;
+    if (convPoints.length === 0) {
+      alert("لا توجد نقاط مضافة لفتحها.");
+      selectEl.value = "";
+      return;
+    }
+    const target = convPoints[0];
+    if (val === 'maps') {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${target.lat},${target.lon}`, '_blank');
+    } else if (val === 'earth') {
+      window.open(`https://earth.google.com/web/@${target.lat},${target.lon},1000a,35y,0h,0t,0r`, '_blank');
+    }
+    selectEl.value = "";
+  }
+
+  function addCoordinatePoint() {
+    const nameIn = document.getElementById("ptName");
+    const xIn = document.getElementById("ptX");
+    const yIn = document.getElementById("ptY");
+
+    const rawX = xIn.value;
+    const rawY = yIn.value;
+    if (!rawX || !rawY) return alert("يرجى إدخال قيمتي X و Y.");
+
+    const x = fixX(rawX);
+    const y = parseFloat(rawY);
+    const name = nameIn.value.trim() || String(convPoints.length + 1);
+
+    const geo = ammar_engine_transform(x, y);
+
+    convPoints.push({ name, x, y, lat: geo.lat, lon: geo.lon });
+
+    renderPointsTable();
+    xIn.value = "";
+    yIn.value = "";
+    nameIn.value = "";
+    nameIn.focus();
+
+    renderSatelliteData(getGeographicData());
+    updateExcludeDropdown();
+    updateAudioTargetDropdown();
+    autoCacheArea();
+  }
+
+  function autoCacheArea() {
+    if (!satTileLayer || !satTileLayer.calculateControlLayer || convPoints.length === 0) return;
+    const bounds = satMap.getBounds();
+    const currentZoom = satMap.getZoom();
+    const minZoom = Math.max(currentZoom - 1, 15);
+    const maxZoom = Math.min(currentZoom + 2, 19);
+
+    satTileLayer.saveTiles(bounds, minZoom, maxZoom, () => {}).then(() => {}).catch(err => console.log(err));
+  }
+
+  function saveCurrentAreaOffline() {
+    if (!satTileLayer || !satTileLayer.calculateControlLayer) {
+      return alert("محرك الأوفلاين يتطلب اتصالاً لتحميل المربعات أول مرة.");
+    }
+    const btn = document.getElementById("btnSaveOffline");
+    btn.innerText = "⏳ جاري حفظ الخريطة...";
+
+    const bounds = satMap.getBounds();
+    const minZoom = Math.max(satMap.getZoom() - 1, 14);
+    const maxZoom = Math.min(satMap.getZoom() + 2, 19);
+
+    let count = 0;
+    satTileLayer.saveTiles(bounds, minZoom, maxZoom, () => {
+      count++;
+      btn.innerText = `⏳ جاري: ${count}`;
+    }).then(() => {
+      btn.innerText = "✅ تم حفظ الخريطة أوفلاين (مجلد AmmarSmartSurvey)";
+      setTimeout(() => { btn.innerText = "💾 حفظ الخريطة أوفلاين"; }, 2500);
+      alert("تم حفظ مربعات الأقمار الصناعية لهذه المنطقة بنجاح ضمن مجلد AmmarSmartSurvey وستعمل بدون إنترنت!");
+    }).catch(err => {
+      btn.innerText = "❌ خطأ";
+      console.error(err);
+    });
+  }
+
+  function saveCurrentSession() {
+    if (convPoints.length === 0) return alert("لا توجد نقاط مدخلة لحفظها في جلسة.");
+    let n = currentSessionName || prompt("أدخل اسم الجلسة لحفظ النقاط:");
+    if (!n || !n.trim()) return;
+    currentSessionName = n.trim();
+
+    let db = JSON.parse(localStorage.getItem("converterSessionsDB") || "[]");
+    const sessObj = {
+      id: currentSessionId || Date.now(),
+      name: currentSessionName,
+      date: new Date().toLocaleDateString('ar-EG'),
+      data: convPoints
+    };
+
+    if (currentSessionId) {
+      const idx = db.findIndex(x => x.id === currentSessionId);
+      if (idx !== -1) db[idx] = sessObj;
+      else db.push(sessObj);
+    } else {
+      currentSessionId = sessObj.id;
+      db.push(sessObj);
+    }
+
+    localStorage.setItem("converterSessionsDB", JSON.stringify(db));
+    updateSessionsDropdown();
+    document.getElementById("activeSessionBadge").innerText = `الجلسة الحالية: ${currentSessionName} (مجلد AmmarSmartSurvey)`;
+    alert(`تم حفظ الجلسة (${currentSessionName}) ضمن مجلد AmmarSmartSurvey بنجاح ✅`);
+  }
+
+  function updateSessionsDropdown() {
+    const dropdown = document.getElementById("sessionsDropdown");
+    const db = JSON.parse(localStorage.getItem("converterSessionsDB") || "[]");
+    dropdown.innerHTML = `
+      <option value="">-- استرجاع جلسة سابقة --</option>
+      <option value="NEW_SESSION" style="font-weight:900; color:#16a34a;">➕ بدء جلسة جديدة</option>
+    ` + db.reverse().map(s => `
+      <option value="${s.id}" ${s.id === currentSessionId ? 'selected' : ''}>${s.name} (${s.data ? s.data.length : 0} نقطة)</option>
+    `).join("");
+  }
+
+  function handleSessionSelection(selectEl) {
+    const val = selectEl.value;
+    if (val === "NEW_SESSION") {
+      startNewSession();
+      selectEl.value = "";
+    } else if (val) {
+      loadSelectedSession(val);
+    }
+  }
+
+  function startNewSession() {
+    if (convPoints.length > 0 && !confirm("هل تود بدء جلسة جديدة؟ سيتم مسح النقاط الحالية غير المحفوظة.")) return;
+    currentSessionId = null;
+    currentSessionName = "";
+    convPoints = [];
+    renderPointsTable();
+    renderSatelliteData(getGeographicData());
+    updateExcludeDropdown();
+    updateAudioTargetDropdown();
+    document.getElementById("activeSessionBadge").innerText = "الجلسة الحالية: جديدة (غير محفوظة)";
+    toggleModal('toolsModal');
+  }
+
+  function loadSelectedSession(val) {
+    const db = JSON.parse(localStorage.getItem("converterSessionsDB") || "[]");
+    const s = db.find(x => x.id == val);
+    if (s) {
+      currentSessionId = s.id;
+      currentSessionName = s.name;
+      convPoints = s.data || [];
+      renderPointsTable();
+      renderSatelliteData(getGeographicData());
+      updateExcludeDropdown();
+      updateAudioTargetDropdown();
+      document.getElementById("activeSessionBadge").innerText = `الجلسة الحالية: ${currentSessionName}`;
+      toggleModal('toolsModal');
+      autoCacheArea();
+    }
+  }
+
+  function deleteSelectedSession() {
+    const dropdown = document.getElementById("sessionsDropdown");
+    const val = dropdown.value;
+    if (!val || val === "NEW_SESSION") return alert("يرجى اختيار جلسة صحيحة من القائمة لحذفها.");
+    if (confirm("هل تود حذف هذه الجلسة نهائياً؟")) {
+      let db = JSON.parse(localStorage.getItem("converterSessionsDB") || "[]");
+      db = db.filter(x => x.id != val);
+      localStorage.setItem("converterSessionsDB", JSON.stringify(db));
+      if (currentSessionId == val) {
+        currentSessionId = null;
+        currentSessionName = "";
+        document.getElementById("activeSessionBadge").innerText = `الجلسة الحالية: جديدة (غير محفوظة)`;
+      }
+      updateSessionsDropdown();
+    }
+  }
+
+  function renderPointsTable() {
+    const tbody = document.getElementById("pointsTableBody");
+    document.getElementById("btnTableBadge").innerText = `📋 الجدول (${convPoints.length})`;
+
+    if (convPoints.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:#64748b;">لا توجد نقاط مدخلة بعد</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = convPoints.map((p, idx) => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.x.toFixed(2)}</td>
+        <td>${p.y.toFixed(2)}</td>
+        <td>${p.lat.toFixed(6)}</td>
+        <td>${p.lon.toFixed(6)}</td>
+        <td>
+          <button class="table-btn" onclick="openSingleInGoogleMaps(${p.lat}, ${p.lon})" style="background:#e0f2fe; color:#0369a1;">🗺️ Maps</button>
+        </td>
+        <td>
+          <button class="table-btn" onclick="movePointUp(${idx})" ${idx === 0 ? 'disabled' : ''}>⬆️</button>
+          <button class="table-btn" onclick="movePointDown(${idx})" ${idx === convPoints.length - 1 ? 'disabled' : ''}>⬇️</button>
+          <button class="table-btn" onclick="deletePoint(${idx})" style="background:#fee2e2; color:#dc2626;">🗑️</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function movePointUp(idx) {
+    if (idx <= 0) return;
+    const temp = convPoints[idx];
+    convPoints[idx] = convPoints[idx - 1];
+    convPoints[idx - 1] = temp;
+    renderPointsTable();
+    renderSatelliteData(getGeographicData());
+  }
+
+  function movePointDown(idx) {
+    if (idx >= convPoints.length - 1) return;
+    const temp = convPoints[idx];
+    convPoints[idx] = convPoints[idx + 1];
+    convPoints[idx + 1] = temp;
+    renderPointsTable();
+    renderSatelliteData(getGeographicData());
+  }
+
+  function deletePoint(idx) {
+    if (confirm(`حذف النقطة (${convPoints[idx].name})؟`)) {
+      convPoints.splice(idx, 1);
+      renderPointsTable();
+      renderSatelliteData(getGeographicData());
+      updateExcludeDropdown();
+      updateAudioTargetDropdown();
+    }
+  }
+
+  function clearAllPoints() {
+    if (confirm("مسح جميع النقاط من الشاشة؟")) {
+      convPoints = [];
+      renderPointsTable();
+      renderSatelliteData(getGeographicData());
+      updateExcludeDropdown();
+      updateAudioTargetDropdown();
+    }
+  }
+
+  function openSingleInGoogleMaps(lat, lon) {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+  }
+
+  function getGeographicData() {
+    const targets = [];
+    convPoints.forEach(p => {
+      if (!excludedPointNames.includes(p.name)) {
+        const shifted = ammar_engine_transform(p.x + visualShiftX, p.y + visualShiftY);
+        targets.push({
+          name: p.name,
+          x: p.x,
+          y: p.y,
+          lat: shifted.lat,
+          lon: shifted.lon
+        });
+      }
+    });
+    return { targets };
+  }
+
+  function initMap() {
+    const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21, attribution: 'Google Hybrid' });
+    const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 21, attribution: 'Google Sat' });
+    const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri' });
+
+    const tileUrl = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
+    if (L.tileLayer.offline) {
+      satTileLayer = L.tileLayer.offline(tileUrl, { maxZoom: 21, crossOrigin: true, attribution: 'Google Offline Hybrid' });
+    } else {
+      satTileLayer = googleHybrid;
+    }
+
+    satMap = L.map('satMapContainer', {
+      layers: [satTileLayer],
+      zoomControl: false,
+      rotate: true,
+      touchRotate: true,
+      rotateControl: false
+    }).setView([34.5, 38.5], 7);
+
+    L.control.zoom({ position: 'topleft' }).addTo(satMap);
+
+    satMap.on('rotate zoom move', () => {
+      const bearing = satMap.getBearing ? satMap.getBearing() : 0;
+      document.getElementById('compassArrow').style.transform = `rotate(${bearing}deg)`;
+    });
+
+    const baseMaps = {
+      "🛰️ غوغل هجين": satTileLayer,
+      "🛰️ غوغل فضائي": googleSat,
+      "🌍 إيزري": esriImagery
+    };
+    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(satMap);
+
+    satLayerGroup = L.layerGroup().addTo(satMap);
+  }
+
+  function resetMapNorth() {
+    if (satMap.setBearing) {
+      satMap.setBearing(0);
+    } else {
+      satMap.setView(satMap.getCenter(), satMap.getZoom());
+    }
+    document.getElementById('compassArrow').style.transform = `rotate(0deg)`;
+  }
+
+  function renderSatelliteData(data) {
+    if (!satMap || !satLayerGroup) return;
+    satLayerGroup.clearLayers();
+
+    updateRouteTargetDropdown(data);
+    const bounds = [];
+
+    if (data.targets && data.targets.length > 0) {
+      const polyCoords = [];
+      data.targets.forEach(t => {
+        bounds.push([t.lat, t.lon]);
+        polyCoords.push([t.lat, t.lon]);
+
+        const marker = L.circleMarker([t.lat, t.lon], {
+          radius: 6.5, fillColor: '#10b981', color: '#000', weight: 2, fillOpacity: 1
+        }).bindPopup(`<b>${t.name}</b><br>X: ${t.x.toFixed(2)}<br>Y: ${t.y.toFixed(2)}<br><a href="https://www.google.com/maps/search/?api=1&query=${t.lat},${t.lon}" target="_blank">فتح في Google Maps</a>`).addTo(satLayerGroup);
+
+        if (showNamesOnMap) {
+          marker.bindTooltip(t.name, { permanent: true, direction: 'top', className: 'map-pt-label', offset: [0, -7] });
+        }
+        if (showCoordsOnMap) {
+          const cMarker = L.marker([t.lat, t.lon], { opacity: 0 }).addTo(satLayerGroup);
+          cMarker.bindTooltip(`X:${t.x.toFixed(2)}<br>Y:${t.y.toFixed(2)}`, { permanent: true, direction: 'bottom', className: 'map-pt-coord-card', offset: [0, 7] });
+        }
+      });
+
+      if (data.targets.length >= 2) {
+        if (data.targets.length >= 3) {
+          L.polygon(polyCoords, { color: '#047857', weight: 3, fillColor: '#10b981', fillOpacity: 0.18 }).addTo(satLayerGroup);
+        } else {
+          L.polyline(polyCoords, { color: '#047857', weight: 3 }).addTo(satLayerGroup);
+        }
+      }
+    }
+
+    if (bounds.length > 0 && isFirstGPS) {
+      satMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 18 });
+    }
+  }
+
+  function updateAudioTargetDropdown() {
+    const select = document.getElementById("audioTargetSelect");
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">-- اختر نقطة لتوقيعها صوتياً --</option>';
+    convPoints.forEach(p => {
+      select.innerHTML += `<option value="${p.lat},${p.lon}">${p.name}</option>`;
+    });
+    select.value = currentVal;
+  }
+
+  function toggleAudioStakeout() {
+    const btn = document.getElementById("btnAudioToggle");
+    const badge = document.getElementById("audioStatusBadge");
+    const targetVal = document.getElementById("audioTargetSelect").value;
+
+    if (!isAudioActive) {
+      if (!targetVal) return alert("يرجى اختيار نقطة أولاً لتوجيهك إليها صوتياً.");
+      if (!currentUserLatLng) return alert("يرجى تفعيل زر GPS (الموقع الحالي) بالخريطة أولاً ليعمل التوجيه الصوتي.");
+
+      isAudioActive = true;
+      btn.innerText = "إيقاف الصوت";
+      btn.style.background = "#dc2626";
+      badge.innerText = "🔊 التوجيه الصوتي نشط ضمن مجلد AmmarSmartSurvey... استمع للمتحدث وأنت ماشي.";
+      speakText("تم تشغيل التوجيه الصوتي للموقع.");
+
+      audioWatchInterval = setInterval(() => {
+        if (!currentUserLatLng || !isAudioActive) return;
+        const [destLat, destLon] = targetVal.split(',').map(Number);
+        const dist = satMap.distance([currentUserLatLng.lat, currentUserLatLng.lng], [destLat, destLon]);
+
+        if (dist < 0.8) {
+          speakText("وصلت إلى النقطة بدقة.");
+          badge.innerText = "✅ وصلت إلى النقطة المطلوبة!";
+          toggleAudioStakeout();
+        } else if (dist < 5) {
+          speakText("أنت قريب جداً، المسافة أقل من خمسة أمتار.");
+        } else {
+          speakText(`المسافة المتبقية ${Math.round(dist)} متراً.`);
+        }
+      }, 6000);
+
+    } else {
+      isAudioActive = false;
+      clearInterval(audioWatchInterval);
+      btn.innerText = "تشغيل الصوت";
+      btn.style.background = "#0284c7";
+      badge.innerText = "التوجيه الصوتي متوقف. اختر نقطة وفعّله.";
+      speakText("تم إيقاف التوجيه الصوتي.");
+    }
+  }
+
+  function speakText(text) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ar-SA';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function stepWholeShape(dirX, dirY) {
+    const step = parseFloat(document.getElementById("shiftStepVal").value) || 0.5;
+    visualShiftX += (dirX * step);
+    visualShiftY += (dirY * step);
+    document.getElementById("shiftStatusBadge").innerText = `dX:${visualShiftX.toFixed(1)} dY:${visualShiftY.toFixed(1)}`;
+    renderSatelliteData(getGeographicData());
+  }
+
+  function resetVisualShift() {
+    visualShiftX = 0.0; visualShiftY = 0.0;
+    document.getElementById("shiftStatusBadge").innerText = `dX:0 dY:0`;
+    renderSatelliteData(getGeographicData());
+  }
+
+  function updateExcludeDropdown() {
+    const select = document.getElementById("excludePointSelect");
+    select.innerHTML = '<option value="">-- اختر نقطة لإخفائها --</option>';
+    convPoints.forEach(p => {
+      if (!excludedPointNames.includes(p.name)) {
+        select.innerHTML += `<option value="${p.name}">نقطة (${p.name})</option>`;
+      }
+    });
+  }
+
+  function excludeSelectedPoint() {
+    const val = document.getElementById("excludePointSelect").value;
+    if (val && !excludedPointNames.includes(val)) {
+      excludedPointNames.push(val);
+      updateExcludeDropdown();
+      renderSatelliteData(getGeographicData());
+    }
+  }
+
+  function resetExcludedPoints() {
+    excludedPointNames = [];
+    updateExcludeDropdown();
+    renderSatelliteData(getGeographicData());
+  }
+
+  function togglePtNames() {
+    showNamesOnMap = !showNamesOnMap;
+    document.getElementById("btnToggleNames").style.background = showNamesOnMap ? "#16a34a" : "#475569";
+    renderSatelliteData(getGeographicData());
+  }
+
+  function togglePtCoords() {
+    showCoordsOnMap = !showCoordsOnMap;
+    document.getElementById("btnToggleCoords").style.background = showCoordsOnMap ? "#16a34a" : "#475569";
+    renderSatelliteData(getGeographicData());
+  }
+
+  function toggleGPS() {
+    const btn = document.getElementById('gpsToggle');
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null; currentUserLatLng = null;
+      btn.classList.remove('active');
+      if (userMarker) satMap.removeLayer(userMarker);
+      if (accuracyCircle) satMap.removeLayer(accuracyCircle);
+      userMarker = null; accuracyCircle = null; isFirstGPS = true;
+      if (routePolyline) { satMap.removeLayer(routePolyline); routePolyline = null; }
+    } else {
+      if (!navigator.geolocation) return alert("الموقع غير مدعوم.");
+      btn.classList.add('active');
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy;
+          currentUserLatLng = { lat, lng: lon };
+
+          if (!accuracyCircle) {
+            accuracyCircle = L.circle([lat, lon], { radius: acc, color: '#1a73e8', weight: 1, fillColor: '#1a73e8', fillOpacity: 0.15 }).addTo(satMap);
+          } else {
+            accuracyCircle.setLatLng([lat, lon]);
+            accuracyCircle.setRadius(acc);
+          }
+
+          if (!userMarker) {
+            const icon = L.divIcon({ className: 'user-loc-pulse', iconSize: [15, 15], iconAnchor: [7.5, 7.5] });
+            userMarker = L.marker([lat, lon], { icon: icon }).addTo(satMap);
+          } else {
+            userMarker.setLatLng([lat, lon]);
+          }
+
+          if (isFirstGPS) {
+            satMap.flyTo([lat, lon], 18, { duration: 1.2 });
+            isFirstGPS = false;
+          }
+
+          if (document.getElementById("routeTargetSelect").value) calculateRoute();
+        },
+        (err) => { alert('تعذر تحديد الموقع: ' + err.message); btn.classList.remove('active'); watchId = null; },
+        { enableHighAccuracy: true, maximumAge: 0 }
+      );
+    }
+  }
+
+  function setRoutingMode(mode) {
+    routingMode = mode;
+    document.getElementById('btnModeCar').classList.toggle('active', mode === 'driving');
+    document.getElementById('btnModeFoot').classList.toggle('active', mode === 'foot');
+    document.getElementById('btnModeDirect').classList.toggle('active', mode === 'direct');
+    calculateRoute();
+  }
+
+  function clearRouting() {
+    if (routePolyline) { satMap.removeLayer(routePolyline); routePolyline = null; }
+    document.getElementById("routeTargetSelect").value = "";
+    document.getElementById("routeInfoBadge").style.display = "none";
+  }
+
+  function updateRouteTargetDropdown(data) {
+    const select = document.getElementById("routeTargetSelect");
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">-- اختر هدفاً --</option>';
+    data.targets.forEach(t => {
+      select.innerHTML += `<option value="${t.lat},${t.lon}">نقطة (${t.name})</option>`;
+    });
+    select.value = currentVal;
+  }
+
+  async function calculateRoute() {
+    const targetVal = document.getElementById("routeTargetSelect").value;
+    const badge = document.getElementById("routeInfoBadge");
+    if (!targetVal) return clearRouting();
+    if (!currentUserLatLng) return alert("يرجى تفعيل زر GPS أولاً لتحديد موقعك.");
+
+    const [destLat, destLon] = targetVal.split(',').map(Number);
+    const startLat = currentUserLatLng.lat, startLon = currentUserLatLng.lng;
+
+    if (routePolyline) { satMap.removeLayer(routePolyline); routePolyline = null; }
+
+    if (routingMode === 'direct') {
+      routePolyline = L.polyline([[startLat, startLon], [destLat, destLon]], { color: '#2563eb', weight: 4, dashArray: '8, 8' }).addTo(satMap);
+      const d = satMap.distance([startLat, startLon], [destLat, destLon]);
+      badge.innerText = `📏 جوي: ${d < 1000 ? Math.round(d) + ' م' : (d / 1000).toFixed(2) + ' كم'}`;
+      badge.style.display = "block";
+      return;
+    }
+
+    badge.innerText = "⏳ جاري الحساب...";
+    badge.style.display = "block";
+    const profile = routingMode === 'driving' ? 'driving' : 'foot';
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${startLon},${startLat};${destLon},${destLat}?overview=full&geometries=geojson`;
+
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.code === 'Ok' && json.routes && json.routes.length > 0) {
+        const route = json.routes[0];
+        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+        routePolyline = L.polyline(coords, { color: '#2563eb', weight: 5, opacity: 0.9 }).addTo(satMap);
+        const distStr = route.distance < 1000 ? `${Math.round(route.distance)} م` : `${(route.distance/1000).toFixed(2)} كم`;
+        const durStr = route.duration < 60 ? `${Math.round(route.duration)} ث` : `${Math.round(route.duration/60)} د`;
+        badge.innerText = `${routingMode === 'driving' ? '🚗' : '🚶'} ${distStr} | ${durStr}`;
+      } else { throw new Error(); }
+    } catch {
+      routePolyline = L.polyline([[startLat, startLon], [destLat, destLon]], { color: '#2563eb', weight: 4, dashArray: '6, 6' }).addTo(satMap);
+      const d = satMap.distance([startLat, startLon], [destLat, destLon]);
+      badge.innerText = `📏 مباشر: ${d < 1000 ? Math.round(d) + ' م' : (d / 1000).toFixed(2) + ' كم'}`;
+    }
+  }
+
+  function downloadKML() {
+    if (convPoints.length === 0) return alert("لا توجد نقاط لتصديرها.");
+    let projName = currentSessionName || prompt("اسم ملف الـ KML ضمن مجلد AmmarSmartSurvey:", "Converted_Points");
+    if (!projName) return;
+
+    let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${projName}</name>
+    <description>تم التصدير عبر تطبيق عمار الذكي - مجلد AmmarSmartSurvey</description>
+    <Style id="ptStyle">
+      <IconStyle><color>ff00ff00</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle>
+      <LineStyle><color>ff047857</color><width>3</width></LineStyle>
+      <PolyStyle><color>4010b981</color></PolyStyle>
+    </Style>
+`;
+    convPoints.forEach(p => {
+      kml += `    <Placemark><name>${p.name}</name><description>X: ${p.x.toFixed(2)}, Y: ${p.y.toFixed(2)}</description><styleUrl>#ptStyle</styleUrl><Point><coordinates>${p.lon},${p.lat},0</coordinates></Point></Placemark>\n`;
+    });
+
+    if (convPoints.length >= 3) {
+      let coordsStr = convPoints.map(p => `${p.lon},${p.lat},0`).join(" ") + ` ${convPoints[0].lon},${convPoints[0].lat},0`;
+      kml += `    <Placemark><name>المضلع</name><styleUrl>#ptStyle</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>${coordsStr}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>\n`;
+    }
+
+    kml += `  </Document>\n</kml>`;
+    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `AmmarSmartSurvey_${projName.replace(/[/\\?%*:|"<>]/g, '_')}.kml`;
+    link.click();
+  }
+
+  function downloadTXT() {
+    if (convPoints.length === 0) return alert("لا توجد نقاط مدخلة.");
+    const sessHeader = currentSessionName ? `الجلسة: ${currentSessionName}\n` : '';
+    let txt = `========================================\n تقرير تحويل الإحداثيات - م. عمار يوسف\n المجلد: AmmarSmartSurvey\n========================================\n${sessHeader}# | X | Y | Lat | Lon\n----------------------------------------\n`;
+    convPoints.forEach(p => {
+      txt += `${p.name} | ${p.x.toFixed(2)} | ${p.y.toFixed(2)} | ${p.lat.toFixed(6)} | ${p.lon.toFixed(6)}\n`;
+    });
+    const blob = new Blob(['\uFEFF' + txt], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `AmmarSmartSurvey_${(currentSessionName || 'Converted_Points').replace(/[/\\?%*:|"<>]/g, '_')}.txt`;
+    link.click();
+  }
+
+  window.onload = () => {
+    initMap();
+    renderPointsTable();
+    updateSessionsDropdown();
+    updateAudioTargetDropdown();
+  };
+</script>
+</body>
+</html>

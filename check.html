@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ar" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>🔍 التحقيق المساحي - م. عمار يوسف</title>
+
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Error', err));
+      });
+    }
+  </script>
+
+  <style>
+    :root{--main:#0284c7;--danger:#dc2626;--ok:#16a34a;--bg:#f1f5f9}
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:#000;direction:ltr; text-align: left; overflow-x: hidden;}
+    nav{background:#0f172a; padding:10px; text-align:center; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;}
+    nav a{color:#fff; text-decoration:none; font-size:12px; font-weight:bold; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:5px;}
+    header{background:#0369a1;color:#fff;padding:12px;text-align:center;}
+    header h1{margin:0;font-size:22px;font-weight:900}
+    .container{padding:8px; box-sizing: border-box; max-width: 700px; margin: 0 auto;}
+    .card{background:#fff; padding:12px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.15); margin-bottom:10px; border:2px solid #000;}
+    
+    .input{padding:12px; border:3px solid #000; border-radius:8px; width:100%; font-size:18px; font-weight:900; box-sizing:border-box; background:#fff !important; color:#000 !important;}
+    .search-wrap { position: relative; width: 100%; }
+    .results-box { 
+        position: absolute; bottom: 100%; left: 0; right: 0; 
+        background: #fff; border: 3px solid #000; border-bottom: none;
+        max-height: 180px; overflow-y: auto; z-index: 9999; display: none;
+        border-radius: 8px 8px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.4);
+    }
+    .result-item { padding: 10px 12px; border-bottom: 1px solid #ddd; cursor: pointer; font-weight: 900; font-size: 15px; color: #000; }
+    .result-item:hover { background: #e2e8f0; }
+
+    .btn{padding:12px; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:900;}
+    .btn.main{background:#000;color:#fff}
+    .btn.ok{background:var(--ok);color:#fff}
+    .btn.danger{background:var(--danger);color:#fff}
+
+    .hidden { display: none !important; }
+    .summary-box { display: flex; justify-content: space-between; align-items: center; background: #e0f2fe; padding: 12px; border: 2px solid #000; font-weight: 900; font-size: 18px;}
+    .modal { display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); overflow-y:auto; }
+    .modal-content { background:#fff; margin:2% auto; padding:15px; width:94%; border-radius:10px; border:2px solid #000; }
+    #summaryText { background:#fff; color:#000; padding:15px; border:2px solid #000; font-family:monospace; font-size:16px; font-weight:900; white-space:pre-wrap; text-align:left; line-height:1.4; }
+
+    .stake-item {
+      background: #ffffff;
+      border: 3px solid #000000;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 0 #000;
+    }
+    .stake-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-bottom: 2px solid #000;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .stake-id {
+      font-size: 22px;
+      font-weight: 900;
+      color: #000;
+      background: #e2e8f0;
+      padding: 2px 10px;
+      border-radius: 6px;
+      border: 2px solid #000;
+    }
+
+    .stake-primary {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .stake-box {
+      flex: 1;
+      border: 2px solid #000;
+      border-radius: 6px;
+      padding: 6px;
+      text-align: center;
+    }
+    .stake-box.hd {
+      background: #fef2f2;
+      border-color: #991b1b;
+    }
+    .stake-box.hr {
+      background: #eff6ff;
+      border-color: #1e40af;
+    }
+    .box-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      display: block;
+    }
+    .box-title.hd { color: #b91c1c; }
+    .box-title.hr { color: #1d4ed8; }
+    .val-hd {
+      font-size: 32px;
+      font-weight: 900;
+      color: #dc2626;
+      line-height: 1.1;
+      display: block;
+    }
+    .val-hr {
+      font-size: 26px;
+      font-weight: 900;
+      color: #000000;
+      line-height: 1.1;
+      display: block;
+    }
+
+    .stake-coords {
+      display: flex;
+      justify-content: space-around;
+      background: #f8fafc;
+      border: 2px solid #000;
+      border-radius: 6px;
+      padding: 8px 4px;
+      font-weight: 900;
+      font-size: 20px;
+      color: #000;
+    }
+    .coord-val {
+      letter-spacing: -0.5px;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html">🏠 الرئيسية</a>
+    <a href="p1_survey.html">📐 الرفع</a>
+    <a href="maps2.html">🎯 التوقيع</a>
+    <a href="p5_resection.html">📐 الإيزوليه</a>
+    <a href="p4_smart_search.html">🔍 البحث</a>
+    <a href="p3_db_manager.html">🗄️ النقاط</a>
+</nav>
+
+<header>
+    <h1>🔍 برنامج التحقيق المساحي</h1>
+    <p style="margin:2px 0 0 0; font-weight: bold;">م. عمار يوسف</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <select id="sessionsDropdown" class="input" style="font-size: 15px; margin-bottom: 8px;"></select>
+    <div style="display:flex; gap:8px;">
+        <button onclick="startNew()" class="btn main" style="flex:1">➕ جديدة</button>
+        <button onclick="saveSess()" class="btn ok" style="flex:1">💾 حفظ</button>
+        <button onclick="showSummary()" class="btn" style="flex:1.2; background:#334155; color:#fff">📝 ملخص</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="stEdit">
+        <div class="search-wrap">
+            <input id="stName" class="input" placeholder="نقطة الوقوف..." autocomplete="off">
+            <div id="stResults" class="results-box"></div>
+        </div>
+        <div style="display:flex;gap:5px; margin-top:5px;"><input id="stX" class="input" type="number" placeholder="X"><input id="stY" class="input" type="number" placeholder="Y"></div>
+        <button onclick="toggleLock('st')" class="btn ok" style="width:100%;margin-top:8px;">✅ تثبيت</button>
+    </div>
+    <div id="stShow" class="summary-box hidden"><div>📍 <span id="txtStN"></span> | X:<span id="txtStX"></span></div><button onclick="toggleLock('st')" style="background:#000;color:#fff;border-radius:50%;padding:5px 12px; border:none;">✏️</button></div>
+  </div>
+
+  <div class="card">
+    <div id="bsEdit">
+        <div class="search-wrap">
+            <input id="bsName" class="input" placeholder="نقطة الزيرو..." autocomplete="off">
+            <div id="bsResults" class="results-box"></div>
+        </div>
+        <div style="display:flex;gap:5px; margin-top:5px;"><input id="bsX" class="input" type="number" placeholder="X"><input id="bsY" class="input" type="number" placeholder="Y"></div>
+        <button onclick="toggleLock('bs')" class="btn ok" style="width:100%;margin-top:8px;">✅ تثبيت</button>
+    </div>
+    <div id="bsShow" class="summary-box hidden"><div>🎯 <span id="txtBsN"></span> | X:<span id="txtBsX"></span></div><button onclick="toggleLock('bs')" style="background:#000;color:#fff;border-radius:50%;padding:5px 12px; border:none;">✏️</button></div>
+  </div>
+
+  <div class="card">
+    <div class="search-wrap">
+        <input id="chkName" class="input" placeholder="🔍 اسم نقطة التحقيق (بحث بالقاعدة)..." autocomplete="off">
+        <div id="chkResults" class="results-box"></div>
+    </div>
+    <div style="display:flex; gap:5px; margin-top:5px;">
+        <input id="chkX" class="input" type="number" placeholder="X" onkeypress="handleKey(event, 'chkY')" inputmode="decimal">
+        <input id="chkY" class="input" type="number" placeholder="Y" onkeypress="handleKey(event, 'addCheck')" inputmode="decimal">
+    </div>
+    <div style="margin-top:10px;">
+        <button onclick="addCheck()" class="btn main" style="width:100%; font-size:18px;">➕ تدقيق وحساب HD/HR</button>
+    </div>
+  </div>
+
+  <div class="card" style="background: transparent; border: none; padding: 0; box-shadow: none;">
+    <div id="resList"></div>
+    <button onclick="updateAll()" class="btn danger" style="width:100%; margin-top:5px; font-size:18px; border: 2px solid #000;">🔄 تحديث الحسابات</button>
+  </div>
+</div>
+
+<div id="summaryModal" class="modal">
+    <div class="modal-content">
+        <h2 style="text-align:center">📋 ملخص التحقيق المساحي</h2>
+        <pre id="summaryText"></pre>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn ok" style="flex:2; background:#000" onclick="downloadTXT()">💾 تصدير .txt (دعم عربي ضمن مجلد AmmarSmartSurvey)</button>
+            <button class="btn" style="flex:1; background:#ddd; color:#000" onclick="document.getElementById('summaryModal').style.display='none'">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GRAD = 200 / Math.PI;
+    const fixX = (v) => -Math.abs(parseFloat(v || 0));
+    let chkList = [], sessId = null, sessInfo = { name: "" };
+
+    function handleKey(e, targetId) {
+        if (e.key === "Enter") {
+            if (targetId === 'addCheck') addCheck();
+            else document.getElementById(targetId).focus();
+        }
+    }
+
+    function inv(sx, sy, bx, by, tx, ty) {
+        const bz = (Math.atan2(bx - sx, by - sy) * GRAD + 400) % 400;
+        const tz = (Math.atan2(tx - sx, ty - sy) * GRAD + 400) % 400;
+        return { d: Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2)), r: (tz - bz + 400) % 400 };
+    }
+
+    function addCheck() {
+        const nameIn = document.getElementById("chkName");
+        const xIn = document.getElementById("chkX");
+        const yIn = document.getElementById("chkY");
+
+        const tx = fixX(xIn.value);
+        const ty = parseFloat(yIn.value);
+        if (isNaN(tx) || isNaN(ty)) return alert("يرجى إدخال إحداثيات النقطة بشكل صحيح.");
+
+        const sx = fixX(document.getElementById("stX").value);
+        const sy = parseFloat(document.getElementById("stY").value || 0);
+        const bx = fixX(document.getElementById("bsX").value);
+        const by = parseFloat(document.getElementById("bsY").value || 0);
+
+        const res = inv(sx, sy, bx, by, tx, ty);
+        const ptName = nameIn.value.trim() || `CHK-${chkList.length + 1}`;
+
+        chkList.push({ name: ptName, x: tx, y: ty, d: res.d, r: res.r });
+        render();
+
+        nameIn.value = "";
+        xIn.value = "";
+        yIn.value = "";
+        nameIn.focus();
+    }
+
+    function render() {
+        const listDiv = document.getElementById("resList");
+        if (chkList.length === 0) {
+            listDiv.innerHTML = '<div style="background:#fff; padding:20px; text-align:center; font-weight:900; border:2px dashed #94a3b8; border-radius:8px;">لا توجد نقاط تحقيق مضافة بعد</div>';
+            return;
+        }
+
+        listDiv.innerHTML = chkList.map((t, i) => `
+            <div class="stake-item">
+                <div class="stake-header">
+                    <span class="stake-id">📍 ${t.name}</span>
+                    <button onclick="removeCheck(${i})" style="background:var(--danger); color:#fff; border:none; border-radius:4px; padding:4px 8px; font-weight:bold; cursor:pointer;">حذف</button>
+                </div>
+                <div class="stake-primary">
+                    <div class="stake-box hd">
+                        <span class="box-title hd">المسافة المطلوبة HD</span>
+                        <span class="val-hd">${t.d.toFixed(2)}</span>
+                    </div>
+                    <div class="stake-box hr">
+                        <span class="box-title hr">الزاوية المطلوبة HR</span>
+                        <span class="val-hr">${t.r.toFixed(4)}</span>
+                    </div>
+                </div>
+                <div class="stake-coords">
+                    <span>X: <span class="coord-val">${t.x.toFixed(2)}</span></span>
+                    <span>Y: <span class="coord-val">${t.y.toFixed(2)}</span></span>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    function removeCheck(idx) {
+        if (confirm("حذف هذه النقطة؟")) {
+            chkList.splice(idx, 1);
+            render();
+        }
+    }
+
+    function toggleLock(id) {
+        const e = document.getElementById(id + 'Edit'), s = document.getElementById(id + 'Show');
+        if(e.classList.contains('hidden')) { e.classList.remove('hidden'); s.classList.add('hidden'); }
+        else {
+            const n = document.getElementById(id + 'Name').value, x = document.getElementById(id + 'X').value, y = document.getElementById(id + 'Y').value;
+            if(!n || !x || !y) return alert("البيانات ناقصة");
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'N').innerText = n;
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'X').innerText = fixX(x).toFixed(2);
+            e.classList.add('hidden'); s.classList.remove('hidden');
+        }
+    }
+
+    window.onload = () => {
+        loadSess();
+        render();
+
+        const searchConfigs = [
+            { id: 'stName', res: 'stResults', pre: 'st' },
+            { id: 'bsName', res: 'bsResults', pre: 'bs' },
+            { id: 'chkName', res: 'chkResults', pre: 'chk' }
+        ];
+
+        searchConfigs.forEach(conf => {
+            const inp = document.getElementById(conf.id);
+            const resBox = document.getElementById(conf.res);
+            inp.addEventListener('input', () => {
+                const queryText = inp.value.toLowerCase().trim();
+                if (!queryText) { resBox.style.display='none'; return; }
+                const keywords = queryText.split(/\s+/); 
+                const db = JSON.parse(localStorage.getItem("pointsDB") || "[]");
+                const matches = db.filter(p => {
+                    const n = String(p.name).toLowerCase();
+                    return keywords.every(kw => n.includes(kw));
+                });
+                if (matches.length > 0) {
+                    resBox.innerHTML = matches.slice(0, 15).map(p => `
+                        <div class="result-item" onclick="pickPt('${conf.id}','${p.name}',${p.x},${p.y},'${conf.res}','${conf.pre}')">
+                            ${p.name} <small style="color:blue">(${p.area || ''})</small>
+                        </div>
+                    `).join("");
+                    resBox.style.display = 'block';
+                } else { resBox.style.display = 'none'; }
+            });
+        });
+
+        document.addEventListener('click', (e) => { 
+            if (!e.target.closest('.search-wrap')) {
+                document.querySelectorAll('.results-box').forEach(b => b.style.display='none');
+            }
+        });
+    };
+
+    function pickPt(inpId, name, x, y, resId, pre) {
+        document.getElementById(inpId).value = name;
+        document.getElementById(pre + 'X').value = Math.abs(x);
+        document.getElementById(pre + 'Y').value = y;
+        document.getElementById(resId).style.display = 'none';
+        if (pre === 'chk') document.getElementById('chkX').focus();
+    }
+
+    function saveSess() {
+        if(chkList.length === 0) return alert("لا توجد نقاط تحقيق محفوظة بعد.");
+        let n = sessInfo.name || prompt("اسم جلسة التحقيق:"); if(!n) return;
+        sessInfo.name = n;
+        let db = JSON.parse(localStorage.getItem("sessionsDB_Check") || "[]");
+        const s = { 
+            id: sessId || Date.now(), 
+            name: n, 
+            date: new Date().toLocaleDateString('ar-EG'), 
+            st: { n: document.getElementById("stName").value, x: document.getElementById("stX").value, y: document.getElementById("stY").value }, 
+            bs: { n: document.getElementById("bsName").value, x: document.getElementById("bsX").value, y: document.getElementById("bsY").value }, 
+            data: chkList 
+        };
+        if(sessId) db[db.findIndex(x => x.id === sessId)] = s; else { sessId = s.id; db.push(s); }
+        localStorage.setItem("sessionsDB_Check", JSON.stringify(db)); 
+        loadSess(); 
+        alert("تم حفظ جلسة التحقيق ضمن مجلد AmmarSmartSurvey ✅");
+    }
+
+    function loadSess() {
+        const ss = JSON.parse(localStorage.getItem("sessionsDB_Check") || "[]");
+        document.getElementById("sessionsDropdown").innerHTML = '<option value="">--- استرجاع جلسة تحقيق ---</option>' + ss.reverse().map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+    }
+
+    document.getElementById("sessionsDropdown").onchange = function() {
+        const s = JSON.parse(localStorage.getItem("sessionsDB_Check") || "[]").find(x => x.id == this.value);
+        if(s) { 
+            sessId = s.id; 
+            sessInfo.name = s.name; 
+            document.getElementById("stName").value = s.st.n; 
+            document.getElementById("stX").value = s.st.x; 
+            document.getElementById("stY").value = s.st.y; 
+            document.getElementById("bsName").value = s.bs.n; 
+            document.getElementById("bsX").value = s.bs.x; 
+            document.getElementById("bsY").value = s.bs.y; 
+            chkList = s.data; 
+            toggleLock('st'); 
+            toggleLock('bs'); 
+            render(); 
+        }
+    };
+
+    function startNew() { if(confirm("بدء جلسة تحقيق جديدة؟")) location.reload(); }
+
+    function showSummary() {
+        let txt = `========================================\n   تقرير التحقيق المساحي - م. عمار يوسف\n   مجلد الحفظ: AmmarSmartSurvey\n========================================\nالجلسة: ${sessInfo.name || "جديدة"}\nالتاريخ: ${new Date().toLocaleDateString('ar-EG')}\n----------------------------------------\nالوقوف: ${document.getElementById("stName").value} (X:${document.getElementById("stX").value})\nالزيرو: ${document.getElementById("bsName").value} (X:${document.getElementById("bsX").value})\n========================================\nاسم النقطة | X | Y | HD | HR\n----------------------------------------\n`;
+        chkList.forEach(t => { 
+            txt += `${t.name} | ${t.x.toFixed(2)} | ${t.y.toFixed(2)} | ${t.d.toFixed(2)} | ${t.r.toFixed(4)}\n`; 
+        });
+        document.getElementById("summaryText").innerText = txt;
+        document.getElementById("summaryModal").style.display = "block";
+    }
+
+    function downloadTXT() {
+        const content = document.getElementById("summaryText").innerText;
+        const BOM = '\uFEFF'; 
+        const blob = new Blob([BOM + content], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `AmmarSmartSurvey_Check_${sessInfo.name || 'Report'}.txt`;
+        link.click();
+    }
+
+    function updateAll() {
+        const sx = fixX(document.getElementById("stX").value), sy = parseFloat(document.getElementById("stY").value || 0);
+        const bx = fixX(document.getElementById("bsX").value), by = parseFloat(document.getElementById("bsY").value || 0);
+        chkList = chkList.map(t => { const res = inv(sx, sy, bx, by, t.x, t.y); return { ...t, d: res.d, r: res.r }; });
+        render(); 
+        alert("تم تحديث حسابات التحقيق ✅");
+    }
+</script>
+</body>
+</html>

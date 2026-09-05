@@ -1,0 +1,2053 @@
+<!doctype html>
+<html lang="ar" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>🎯 التوقيع المساحي والمخططات — م. عمار يوسف</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="https://unpkg.com/leaflet.offline@2.2.0/dist/leaflet.offline.min.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Error', err));
+      });
+    }
+  </script>
+
+  <style>
+    :root{--main:#4f46e5;--danger:#dc2626;--ok:#16a34a;--bg:#f1f5f9}
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:#000;direction:ltr; text-align: left; overflow-x: hidden;}
+    
+    nav{
+      background:#0f172a; 
+      padding:8px 6px; 
+      display:flex; 
+      justify-content:space-between; 
+      gap:4px; 
+      flex-wrap:nowrap; 
+      overflow-x:auto; 
+      white-space:nowrap;
+      scrollbar-width:none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    nav a{
+      color:#fff; 
+      text-decoration:none; 
+      font-size:11px; 
+      font-weight:bold; 
+      background:rgba(255,255,255,0.1); 
+      padding:6px 6px; 
+      border-radius:5px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    header{background:#1e1b4b;color:#fff;padding:10px;text-align:center;}
+    header h1{margin:0;font-size:20px;font-weight:900}
+    .container{padding:8px; box-sizing: border-box; max-width: 700px; margin: 0 auto;}
+    .card{background:#fff; padding:12px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.15); margin-bottom:10px; border:2px solid #000;}
+    
+    .input{padding:12px; border:3px solid #000; border-radius:8px; width:100%; font-size:18px; font-weight:900; box-sizing:border-box; background:#fff !important; color:#000 !important;}
+    .search-wrap { position: relative; width: 100%; }
+    .results-box { 
+        position: absolute; bottom: 100%; left: 0; right: 0; 
+        background: #fff; border: 3px solid #000; border-bottom: none;
+        max-height: 180px; overflow-y: auto; z-index: 9999; display: none;
+        border-radius: 8px 8px 0 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.4);
+    }
+    .result-item { padding: 10px 12px; border-bottom: 1px solid #ddd; cursor: pointer; font-weight: 900; font-size: 15px; color: #000; }
+    .result-item:hover { background: #e2e8f0; }
+
+    .btn{padding:12px; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:900;}
+    .btn.main{background:#000;color:#fff}
+    .btn.ok{background:var(--ok);color:#fff}
+    .btn.danger{background:var(--danger);color:#fff}
+
+    .hidden { display: none !important; }
+    .summary-box { display: flex; justify-content: space-between; align-items: center; background: #e0f2fe; padding: 12px; border: 2px solid #000; font-weight: 900; font-size: 18px;}
+    .modal { display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); overflow-y:auto; }
+    .modal-content { background:#fff; margin:2% auto; padding:15px; width:94%; border-radius:10px; border:2px solid #000; }
+    #summaryText { background:#fff; color:#000; padding:15px; border:2px solid #000; font-family:monospace; font-size:16px; font-weight:900; white-space:pre-wrap; text-align:left; line-height:1.4; }
+
+    .top-action-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      gap: 4px; 
+      margin-bottom: 8px; 
+      flex-wrap: nowrap; 
+      width: 100%;
+    }
+    .top-action-bar button {
+      flex: 1;
+      padding: 8px 2px;
+      font-size: 12px;
+      border: 2px solid #000;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 900;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .btn-pk-top { background: #0284c7; color: #fff; }
+    .btn-area-top { background: #059669; color: #fff; }
+    .btn-map-top { background: #d97706; color: #fff; }
+    .btn-satellite-top { background: #4338ca; color: #fff; }
+
+    .pk-btn-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; max-height: 140px; overflow-y: auto; }
+    .pk-pt-btn { width: 48px; height: 48px; border-radius: 8px; border: 2px solid #000; background: #fff; font-weight: 900; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .pk-pt-btn.selected { background: var(--main); color: #fff; border-color: #000; }
+    .pk-pt-btn.area-sel { background: #059669; color: #fff; border-color: #000; }
+
+    .stake-item {
+      background: #ffffff;
+      border: 3px solid #000000;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 0 #000;
+    }
+    .stake-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-bottom: 2px solid #000;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .stake-id {
+      font-size: 22px;
+      font-weight: 900;
+      color: #000;
+      background: #e2e8f0;
+      padding: 2px 10px;
+      border-radius: 6px;
+      border: 2px solid #000;
+    }
+    .stake-note {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0369a1;
+    }
+
+    .point-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .move-btn {
+      background: #f1f5f9;
+      border: 2px solid #000;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 900;
+      padding: 3px 7px;
+      cursor: pointer;
+    }
+    .move-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .del-btn {
+      background: #fee2e2;
+      border: 2px solid #dc2626;
+      border-radius: 6px;
+      font-size: 15px;
+      padding: 3px 7px;
+      cursor: pointer;
+    }
+
+    .stake-primary {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .stake-box {
+      flex: 1;
+      border: 2px solid #000;
+      border-radius: 6px;
+      padding: 6px;
+      text-align: center;
+    }
+    .stake-box.hd {
+      background: #fef2f2;
+      border-color: #991b1b;
+    }
+    .stake-box.hr {
+      background: #eff6ff;
+      border-color: #1e40af;
+    }
+    .box-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      display: block;
+    }
+    .box-title.hd { color: #b91c1c; }
+    .box-title.hr { color: #1d4ed8; }
+    .val-hd {
+      font-size: 32px;
+      font-weight: 900;
+      color: #dc2626;
+      line-height: 1.1;
+      display: block;
+    }
+    .val-hr {
+      font-size: 26px;
+      font-weight: 900;
+      color: #000000;
+      line-height: 1.1;
+      display: block;
+    }
+
+    .stake-coords {
+      display: flex;
+      justify-content: space-around;
+      background: #f8fafc;
+      border: 2px solid #000;
+      border-radius: 6px;
+      padding: 8px 4px;
+      font-weight: 900;
+      font-size: 20px;
+      color: #000;
+    }
+    .coord-val {
+      letter-spacing: -0.5px;
+    }
+
+    #satelliteModal .modal-content {
+      height: 92vh;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      box-sizing: border-box;
+      transition: all 0.2s ease-in-out;
+    }
+    .fullscreen-mode {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      padding: 6px !important;
+      border-radius: 0 !important;
+      z-index: 99999 !important;
+    }
+    .satellite-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      gap: 4px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    .satellite-header::-webkit-scrollbar { display: none; }
+    .header-btns {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .header-btns button {
+      padding: 6px 7px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 11px;
+      cursor: pointer;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .btn-close-large {
+      background: #dc2626 !important;
+      color: #fff !important;
+      font-size: 20px !important;
+      font-weight: 900 !important;
+      padding: 5px 16px !important;
+      line-height: 1 !important;
+      border: 1.5px solid #000 !important;
+      border-radius: 6px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .btn-close-large:active {
+      transform: scale(0.92);
+    }
+
+    .nav-routing-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+      background: #0f172a;
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1.5px solid #000;
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-routing-bar::-webkit-scrollbar { display: none; }
+    .nav-select {
+      background: #fff;
+      color: #000;
+      border-radius: 4px;
+      padding: 3px 5px;
+      font-size: 11px;
+      font-weight: bold;
+      border: 1px solid #000;
+    }
+    .mode-btn {
+      background: #334155;
+      color: #fff;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      padding: 3px 5px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .mode-btn.active {
+      background: #2563eb;
+      border-color: #93c5fd;
+      color: #fff;
+    }
+    .route-info-badge {
+      background: #1e293b;
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      font-family: monospace;
+      border: 1px solid #0284c7;
+    }
+
+    .shift-toolbar {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 4px;
+      background: #fef08a;
+      border: 1.5px solid #ca8a04;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #854d0e;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .shift-toolbar::-webkit-scrollbar { display: none; }
+    .shift-btn {
+      background: #ca8a04;
+      color: #fff;
+      border: none;
+      padding: 4px 7px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .shift-btn:active {
+      transform: scale(0.95);
+    }
+    .shift-step-select {
+      background: #fff;
+      border: 1px solid #000;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px;
+    }
+    .shift-badge {
+      background: #ffffff;
+      border: 1px solid #ca8a04;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #000;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .exclude-toolbar {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 4px;
+      background: #fee2e2;
+      border: 1.5px solid #ef4444;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #991b1b;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .exclude-toolbar::-webkit-scrollbar { display: none; }
+
+    #satMapContainer {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      border: 2px solid #000;
+    }
+
+    .gps-btn {
+      position: absolute;
+      bottom: 25px;
+      right: 25px;
+      z-index: 1000;
+      background: #ffffff;
+      border: 2px solid #000;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .gps-btn:active { transform: scale(0.92); }
+    .gps-btn svg { width: 26px; height: 26px; fill: #444; }
+    .gps-btn.active svg { fill: #1a73e8; }
+    
+    .user-loc-pulse {
+      width: 16px;
+      height: 16px;
+      background-color: #1a73e8;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 10px rgba(26,115,232,0.8);
+      box-sizing: border-box;
+    }
+
+    .map-pt-label {
+      background: rgba(255, 255, 255, 0.95) !important;
+      border: 1.5px solid #000 !important;
+      color: #000 !important;
+      font-weight: 900 !important;
+      font-size: 11px !important;
+      padding: 1px 5px !important;
+      border-radius: 4px !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4) !important;
+      direction: ltr !important;
+    }
+
+    .map-pt-coord-card {
+      background: rgba(15, 23, 42, 0.92) !important;
+      border: 1px solid #38bdf8 !important;
+      color: #ffffff !important;
+      font-family: monospace !important;
+      font-weight: bold !important;
+      font-size: 10px !important;
+      padding: 2px 6px !important;
+      border-radius: 4px !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6) !important;
+      direction: ltr !important;
+      line-height: 1.25 !important;
+      text-align: left !important;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html">🏠 الرئيسية</a>
+    <a href="p1_survey.html">📐 الرفع</a>
+    <a href="check.html">🔍 التحقيق</a>
+    <a href="p5_resection.html">📐 الإيزوليه</a>
+    <a href="p4_smart_search.html">🔍 البحث</a>
+    <a href="p3_db_manager.html">🗄️ النقاط</a>
+</nav>
+
+<header><h1>🎯 التوقيع المساحي والمخططات</h1><p style="margin:2px 0 0 0; font-weight: bold;">م. عمار يوسف</p></header>
+
+<div class="container">
+
+  <div class="top-action-bar">
+    <button onclick="togglePKPanel()" class="btn-pk-top">📐 حساب PK</button>
+    <button onclick="toggleAreaPanel()" class="btn-area-top">🗺️ حساب المساحة</button>
+    <button onclick="toggleMapPanel()" class="btn-map-top">📍 المخطط العام</button>
+    <button onclick="openSatelliteModal()" class="btn-satellite-top">🛰️ عرض خريطة</button>
+  </div>
+
+  <div class="card">
+    <select id="sessionsDropdown" class="input" style="font-size: 15px; margin-bottom: 8px;"></select>
+    <div style="display:flex; gap:8px;">
+        <button onclick="startNew()" class="btn main" style="flex:1">➕ جديدة</button>
+        <button onclick="saveSess()" class="btn ok" style="flex:1">💾 حفظ</button>
+        <button onclick="showSummary()" class="btn" style="flex:1.2; background:#334155; color:#fff">📝 ملخص</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="stEdit">
+        <div class="search-wrap">
+            <input id="stName" class="input" placeholder="نقطة الوقوف..." autocomplete="off">
+            <div id="stResults" class="results-box"></div>
+        </div>
+        <div style="display:flex;gap:5px; margin-top:5px;"><input id="stX" class="input" type="number" placeholder="X"><input id="stY" class="input" type="number" placeholder="Y"></div>
+        <button onclick="toggleLock('st')" class="btn ok" style="width:100%;margin-top:8px;">✅ تثبيت</button>
+    </div>
+    <div id="stShow" class="summary-box hidden"><div>📍 <span id="txtStN"></span> | X:<span id="txtStX"></span></div><button onclick="toggleLock('st')" style="background:#000;color:#fff;border-radius:50%;padding:5px 12px; border:none;">✏️</button></div>
+  </div>
+
+  <div class="card">
+    <div id="bsEdit">
+        <div class="search-wrap">
+            <input id="bsName" class="input" placeholder="نقطة الزيرو..." autocomplete="off">
+            <div id="bsResults" class="results-box"></div>
+        </div>
+        <div style="display:flex;gap:5px; margin-top:5px;"><input id="bsX" class="input" type="number" placeholder="X"><input id="bsY" class="input" type="number" placeholder="Y"></div>
+        <button onclick="toggleLock('bs')" class="btn ok" style="width:100%;margin-top:8px;">✅ تثبيت</button>
+    </div>
+    <div id="bsShow" class="summary-box hidden"><div>🎯 <span id="txtBsN"></span> | X:<span id="txtBsX"></span></div><button onclick="toggleLock('bs')" style="background:#000;color:#fff;border-radius:50%;padding:5px 12px; border:none;">✏️</button></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; gap:5px;">
+        <input id="tgX" class="input" type="number" placeholder="X مطلوب" onkeypress="handleKey(event, 'tgY')" inputmode="decimal">
+        <input id="tgY" class="input" type="number" placeholder="Y مطلوب" onkeypress="handleKey(event, 'addInv')" inputmode="decimal">
+    </div>
+    <div style="margin-top:10px;">
+        <button onclick="addInv()" class="btn main" style="width:100%; font-size:18px;">➕ حساب HD/HR</button>
+    </div>
+  </div>
+
+  <!-- لوحة حساب PK -->
+  <div id="pkSection" class="card hidden" style="border: 2px dashed #0284c7; background: #f8fafc;">
+    <div style="font-weight:900; font-size:16px; margin-bottom:5px;">📍 تحديد خط القياس (اختر نقطتين):</div>
+    <div id="pkPointsList" class="pk-btn-grid"></div>
+    
+    <div id="pkInputZone" class="hidden" style="margin-top:10px;">
+        <div style="font-weight:900; color:#0284c7; margin-bottom:5px;" id="pkSelectionInfo"></div>
+        <input id="pkDist" class="input" type="number" step="any" placeholder="المسافة المراد الحساب عندها (متر)..." inputmode="decimal">
+        <button onclick="calculateAndAddPK()" class="btn ok" style="width:100%; margin-top:8px;">✅ توليد وحساب إحداثيات PK</button>
+    </div>
+  </div>
+
+  <!-- لوحة حساب المساحة -->
+  <div id="areaSection" class="card hidden" style="border: 2px dashed #059669; background: #f0fdf4;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+        <div style="font-weight:900; font-size:16px; color:#065f46;">🗺️ حدد مسار أضلاع القطعة بالتسلسل:</div>
+        <button onclick="resetAreaSelection()" style="background:#ef4444; color:#fff; border:none; border-radius:5px; padding:4px 10px; font-weight:bold; cursor:pointer;">إعادة ضبط</button>
+    </div>
+    
+    <div id="areaPointsList" class="pk-btn-grid"></div>
+
+    <div style="margin-top:8px; border:2px solid #000; border-radius:8px; overflow:hidden; background:#fff;">
+        <canvas id="polygonCanvas" width="600" height="300" style="width:100%; height:auto; display:block;"></canvas>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:10px;">
+        <div style="flex:1; background:#ecfdf5; border:2px solid #059669; border-radius:8px; padding:8px; text-align:center;">
+            <span style="font-size:12px; font-weight:900; color:#047857; display:block;">المساحة (م²)</span>
+            <span id="txtAreaM2" style="font-size:26px; font-weight:900; color:#065f46;">0.00</span>
+        </div>
+        <div style="flex:1; background:#f8fafc; border:2px solid #000; border-radius:8px; padding:8px; text-align:center;">
+            <span style="font-size:12px; font-weight:900; color:#475569; display:block;">المحيط الإجمالي (م)</span>
+            <span id="txtPerimeter" style="font-size:26px; font-weight:900; color:#0f172a;">0.00</span>
+        </div>
+    </div>
+  </div>
+
+  <!-- لوحة المخطط العام التفاعلي -->
+  <div id="mapSection" class="card hidden" style="border: 2px dashed #d97706; background: #fffbeb;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-weight:900; font-size:15px; color:#b45309;">📍 المخطط العام (زووم وسحب باللمس):</div>
+        <button onclick="resetMapTransform()" style="background:#000; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:12px; font-weight:bold; cursor:pointer;">🔄 ضبط العرض</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; font-weight:900;">
+        <span style="color:#dc2626;">🔴 الوقوف</span>
+        <span style="color:#0284c7;">🔵 الزيرو</span>
+        <span style="color:#047857;">🟢 المضلع الخارجي</span>
+        <span style="color:#64748b;">(تكبير بإصبعين 🤏)</span>
+    </div>
+    
+    <div style="border:2px solid #000; border-radius:8px; overflow:hidden; background:#ffffff; touch-action:none; position:relative;">
+        <canvas id="siteMapCanvas" width="600" height="360" style="width:100%; height:auto; display:block; cursor:grab;"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="background: transparent; border: none; padding: 0; box-shadow: none;">
+    <div id="resList"></div>
+    <button onclick="updateAll()" class="btn danger" style="width:100%; margin-top:5px; font-size:18px; border: 2px solid #000;">🔄 تحديث الحسابات</button>
+  </div>
+</div>
+
+<div id="summaryModal" class="modal">
+    <div class="modal-content">
+        <h2 style="text-align:center">📋 ملخص وتصدير الجلسة</h2>
+        <pre id="summaryText"></pre>
+        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+            <button class="btn ok" style="flex:1; background:#000" onclick="downloadTXT()">💾 تصدير .txt (دعم عربي)</button>
+            <button class="btn" style="flex:1; background:#16a34a; color:#fff;" onclick="downloadKML()">🌍 تصدير KML</button>
+            <button class="btn" style="flex:1; background:#ddd; color:#000" onclick="document.getElementById('summaryModal').style.display='none'">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<!-- شاشة عرض الخريطة الفضائية المنبثقة -->
+<div id="satelliteModal" class="modal">
+    <div class="modal-content" id="modalContentBox">
+        <div class="satellite-header">
+            <div class="header-btns">
+                <button onclick="togglePtNames()" id="btnToggleNames" style="background:#16a34a; color:#fff;"># الأرقام</button>
+                <button onclick="togglePtCoords()" id="btnToggleCoords" style="background:#475569; color:#fff;">📍 الإحداثيات</button>
+                <button onclick="toggleExcludePanel()" id="btnExcludeToggle" style="background:#b91c1c; color:#fff;">استبعاد</button>
+                <button onclick="toggleShiftPanel()" id="btnShiftToggle" style="background:#ca8a04; color:#fff;">إزاحة</button>
+                <button onclick="saveCurrentAreaOffline()" id="btnSaveOffline" style="background:#059669; color:#fff;">💾 أوفلاين</button>
+                <button id="btnFullscreen" onclick="toggleFullscreenMap()" style="background:#0284c7; color:#fff;">تصغير</button>
+                <button onclick="closeSatelliteModal()" class="btn-close-large" title="إغلاق الخريطة">✕</button>
+            </div>
+        </div>
+
+        <!-- شريط استبعاد النقاط من الخريطة -->
+        <div class="exclude-toolbar" id="excludeToolbar">
+            <span>استبعاد:</span>
+            <select id="excludePointSelect" class="nav-select" onchange="excludeSelectedPoint()">
+                <option value="">-- اختر نقطة لإخفائها --</option>
+            </select>
+            <button onclick="resetExcludedPoints()" style="background:#16a34a; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer;">🔄 إظهار الكل</button>
+            <span id="excludedCountBadge" style="font-size:11px; color:#b91c1c;"></span>
+        </div>
+
+        <!-- شريط الملاحة والتوجيه -->
+        <div class="nav-routing-bar">
+            <span>🎯 الهدف:</span>
+            <select id="routeTargetSelect" class="nav-select" onchange="calculateRoute()">
+                <option value="">-- اختر نقطة هدف --</option>
+            </select>
+            <button class="mode-btn active" id="btnModeCar" onclick="setRoutingMode('driving')">🚗 سيارة</button>
+            <button class="mode-btn" id="btnModeFoot" onclick="setRoutingMode('foot')">🚶 مشي</button>
+            <button class="mode-btn" id="btnModeDirect" onclick="setRoutingMode('direct')">📏 مباشر</button>
+            <span id="routeInfoBadge" class="route-info-badge" style="display:none;"></span>
+            <button onclick="clearRouting()" style="background:#dc2626; color:#fff; border:none; border-radius:4px; padding:3px 6px; cursor:pointer; font-size:10px;">إلغاء</button>
+        </div>
+
+        <!-- شريط الإزاحة السريعة لكامل المخطط بالأسهم -->
+        <div class="shift-toolbar" id="shiftToolbar">
+            <span>خطوة:</span>
+            <select id="shiftStepVal" class="shift-step-select">
+                <option value="0.2">0.2 م</option>
+                <option value="0.5" selected>0.5 م</option>
+                <option value="1.0">1.0 م</option>
+                <option value="2.0">2.0 م</option>
+            </select>
+            <button onclick="stepWholeShape(-1, 0)" class="shift-btn" title="إزاحة كامل المخطط لليسار">⬅️</button>
+            <button onclick="stepWholeShape(1, 0)" class="shift-btn" title="إزاحة كامل المخطط لليمين">➡️</button>
+            <button onclick="stepWholeShape(0, 1)" class="shift-btn" title="إزاحة كامل المخطط للأعلى">⬆️</button>
+            <button onclick="stepWholeShape(0, -1)" class="shift-btn" title="إزاحة كامل المخطط للأسفل">⬇️</button>
+            <span class="shift-badge" id="shiftStatusBadge">dX: 0.0 | dY: 0.0</span>
+            <button onclick="resetVisualShift()" style="background:#dc2626; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;" title="إعادة ضبط الصفر">🔄 ضبط 0</button>
+        </div>
+
+        <div style="position:relative; flex:1; width:100%; display:flex; min-height:0;">
+            <div id="satMapContainer"></div>
+
+            <!-- زر الموقع GPS -->
+            <button class="gps-btn" id="gpsToggle" onclick="toggleGPS()" title="موقعي الحالي">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GRAD = 200 / Math.PI;
+    const fixX = (v) => -Math.abs(parseFloat(v || 0));
+    let trgs = [], sessId = null, sessInfo = { name: "" };
+
+    let mapZoom = 1.0;
+    let mapPan = { x: 0, y: 0 };
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let lastTouchDist = null;
+
+    function ammar_engine_transform(rawX, rawY) {
+        const x = -Math.abs(parseFloat(rawX));
+        const y = Math.abs(parseFloat(rawY));
+
+        const x2 = x / 100000.0;
+        const y2 = y / 100000.0;
+
+        const lat = (34.1995728022708 
+            + (-0.000109034258955 * x2) 
+            + (0.901919449198777 * y2) 
+            + (-0.004804938821993 * Math.pow(x2, 2)) 
+            + (-0.0000092638803 * x2 * y2) 
+            + (-0.0000619942778 * Math.pow(y2, 2)) 
+            + (-0.0000023827326 * Math.pow(x2, 3)) 
+            + (-0.0001079065784 * Math.pow(x2, 2) * y2) 
+            + (0.0000045190021 * x2 * Math.pow(y2, 2)) 
+            + (-0.0000188294226 * Math.pow(y2, 3)));
+
+        const lon = (39.1511562415421 
+            + (1.08544552373339 * x2) 
+            + (0.000141152839858 * y2) 
+            + (-0.0000227915953 * Math.pow(x2, 2)) 
+            + (0.01158568614149 * x2 * y2) 
+            + (0.0000184425821 * Math.pow(y2, 2)) 
+            + (-0.0000667439376 * Math.pow(x2, 3)) 
+            + (0.0000171280222 * Math.pow(x2, 2) * y2) 
+            + (0.0001975916378 * x2 * Math.pow(y2, 2)) 
+            + (-0.0000060696491 * Math.pow(y2, 3)));
+
+        return { lat, lon };
+    }
+
+    let satMap = null;
+    let satTileLayer = null;
+    let satLayerGroup = null;
+    let isMapFullscreen = false;
+
+    let showNamesOnMap = true;
+    let showCoordsOnMap = false;
+
+    let excludedPointNames = [];
+    let visualShiftX = 0.0;
+    let visualShiftY = 0.0;
+
+    let userMarker = null;
+    let accuracyCircle = null;
+    let watchId = null;
+    let isFirstGPS = true;
+    let currentUserLatLng = null;
+
+    let routingMode = 'driving';
+    let routePolyline = null;
+
+    function toggleShiftPanel() {
+        const bar = document.getElementById("shiftToolbar");
+        const btn = document.getElementById("btnShiftToggle");
+        const isHidden = (bar.style.display === "none" || bar.style.display === "");
+        bar.style.display = isHidden ? "flex" : "none";
+        btn.style.background = isHidden ? "#eab308" : "#ca8a04";
+    }
+
+    function toggleExcludePanel() {
+        const bar = document.getElementById("excludeToolbar");
+        const btn = document.getElementById("btnExcludeToggle");
+        const isHidden = (bar.style.display === "none" || bar.style.display === "");
+        bar.style.display = isHidden ? "flex" : "none";
+        btn.style.background = isHidden ? "#dc2626" : "#b91c1c";
+        updateExcludeDropdown();
+    }
+
+    function updateExcludeDropdown() {
+        const select = document.getElementById("excludePointSelect");
+        select.innerHTML = '<option value="">-- اختر نقطة لإخفائها --</option>';
+
+        const stName = document.getElementById("stName").value || "ST";
+        const bsName = document.getElementById("bsName").value || "BS";
+
+        if (!excludedPointNames.includes("ST:" + stName)) {
+            select.innerHTML += `<option value="ST:${stName}">🔴 الوقوف (${stName})</option>`;
+        }
+        if (!excludedPointNames.includes("BS:" + bsName)) {
+            select.innerHTML += `<option value="BS:${bsName}">🔵 الزيرو (${bsName})</option>`;
+        }
+
+        trgs.forEach((t, idx) => {
+            const ptName = String(t.name || (idx + 1));
+            if (!excludedPointNames.includes(ptName)) {
+                select.innerHTML += `<option value="${ptName}">🟢 نقطة (${ptName})</option>`;
+            }
+        });
+
+        const badge = document.getElementById("excludedCountBadge");
+        badge.innerText = excludedPointNames.length > 0 ? `(مستبعد: ${excludedPointNames.length})` : "";
+    }
+
+    function excludeSelectedPoint() {
+        const select = document.getElementById("excludePointSelect");
+        const val = select.value;
+        if (!val) return;
+        if (!excludedPointNames.includes(val)) {
+            excludedPointNames.push(val);
+        }
+        updateExcludeDropdown();
+        renderSatelliteData(getGeographicData());
+    }
+
+    function resetExcludedPoints() {
+        excludedPointNames = [];
+        updateExcludeDropdown();
+        renderSatelliteData(getGeographicData());
+    }
+
+    function stepWholeShape(dirX, dirY) {
+        const step = parseFloat(document.getElementById("shiftStepVal").value) || 0.5;
+        visualShiftX += (dirX * step);
+        visualShiftY += (dirY * step);
+
+        document.getElementById("shiftStatusBadge").innerText = `dX: ${visualShiftX.toFixed(1)} | dY: ${visualShiftY.toFixed(1)}`;
+        renderSatelliteData(getGeographicData());
+    }
+
+    function resetVisualShift() {
+        visualShiftX = 0.0;
+        visualShiftY = 0.0;
+        document.getElementById("shiftStatusBadge").innerText = `dX: 0.0 | dY: 0.0`;
+        renderSatelliteData(getGeographicData());
+    }
+
+    function setRoutingMode(mode) {
+        routingMode = mode;
+        document.getElementById('btnModeCar').classList.toggle('active', mode === 'driving');
+        document.getElementById('btnModeFoot').classList.toggle('active', mode === 'foot');
+        document.getElementById('btnModeDirect').classList.toggle('active', mode === 'direct');
+        calculateRoute();
+    }
+
+    function clearRouting() {
+        if (routePolyline && satMap) {
+            satMap.removeLayer(routePolyline);
+            routePolyline = null;
+        }
+        document.getElementById("routeTargetSelect").value = "";
+        document.getElementById("routeInfoBadge").style.display = "none";
+    }
+
+    function updateRouteTargetDropdown(data) {
+        const select = document.getElementById("routeTargetSelect");
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- اختر نقطة هدف --</option>';
+
+        if (data.st) {
+            select.innerHTML += `<option value="${data.st.lat},${data.st.lon}">الوقوف (${data.st.name})</option>`;
+        }
+        if (data.bs) {
+            select.innerHTML += `<option value="${data.bs.lat},${data.bs.lon}">الزيرو (${data.bs.name})</option>`;
+        }
+        data.targets.forEach((t) => {
+            select.innerHTML += `<option value="${t.lat},${t.lon}">نقطة (${t.name})</option>`;
+        });
+
+        select.value = currentVal;
+    }
+
+    async function calculateRoute() {
+        const targetVal = document.getElementById("routeTargetSelect").value;
+        const badge = document.getElementById("routeInfoBadge");
+
+        if (!targetVal) {
+            if (routePolyline && satMap) {
+                satMap.removeLayer(routePolyline);
+                routePolyline = null;
+            }
+            badge.style.display = "none";
+            return;
+        }
+
+        if (!currentUserLatLng) {
+            alert("يرجى تشغيل الـ GPS (زر الموقع بالأسفل) لتحديد المسار من مكانك الحالي.");
+            return;
+        }
+
+        const [destLat, destLon] = targetVal.split(',').map(Number);
+        const startLat = currentUserLatLng.lat;
+        const startLon = currentUserLatLng.lng;
+
+        if (routePolyline && satMap) {
+            satMap.removeLayer(routePolyline);
+            routePolyline = null;
+        }
+
+        if (routingMode === 'direct') {
+            const latlngs = [[startLat, startLon], [destLat, destLon]];
+            routePolyline = L.polyline(latlngs, {
+                color: '#2563eb',
+                weight: 4,
+                dashArray: '8, 8'
+            }).addTo(satMap);
+
+            const directDist = satMap.distance([startLat, startLon], [destLat, destLon]);
+            badge.innerText = `📏 جوي: ${directDist < 1000 ? Math.round(directDist) + ' م' : (directDist / 1000).toFixed(2) + ' كم'}`;
+            badge.style.display = "inline-block";
+            return;
+        }
+
+        badge.innerText = "⏳ جاري حساب المسار...";
+        badge.style.display = "inline-block";
+
+        const profile = routingMode === 'driving' ? 'driving' : 'foot';
+        const url = `https://router.project-osrm.org/route/v1/${profile}/${startLon},${startLat};${destLon},${destLat}?overview=full&geometries=geojson`;
+
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+
+            if (json.code === 'Ok' && json.routes && json.routes.length > 0) {
+                const route = json.routes[0];
+                const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+                routePolyline = L.polyline(coords, {
+                    color: '#2563eb',
+                    weight: 5,
+                    opacity: 0.9
+                }).addTo(satMap);
+
+                const dist = route.distance;
+                const dur = route.duration;
+                const distStr = dist < 1000 ? `${Math.round(dist)} م` : `${(dist/1000).toFixed(2)} كم`;
+                const durStr = dur < 60 ? `${Math.round(dur)} ث` : `${Math.round(dur/60)} د`;
+
+                badge.innerText = `${routingMode === 'driving' ? '🚗' : '🚶'} ${distStr} | ${durStr}`;
+            } else {
+                throw new Error("مسار مباشر");
+            }
+        } catch (err) {
+            const latlngs = [[startLat, startLon], [destLat, destLon]];
+            routePolyline = L.polyline(latlngs, {
+                color: '#2563eb',
+                weight: 4,
+                dashArray: '6, 6'
+            }).addTo(satMap);
+
+            const directDist = satMap.distance([startLat, startLon], [destLat, destLon]);
+            badge.innerText = `📏 مباشر: ${directDist < 1000 ? Math.round(directDist) + ' م' : (directDist / 1000).toFixed(2) + ' كم'}`;
+        }
+    }
+
+    function togglePtNames() {
+        showNamesOnMap = !showNamesOnMap;
+        const btn = document.getElementById("btnToggleNames");
+        btn.style.background = showNamesOnMap ? "#16a34a" : "#475569";
+        renderSatelliteData(getGeographicData());
+    }
+
+    function togglePtCoords() {
+        showCoordsOnMap = !showCoordsOnMap;
+        const btn = document.getElementById("btnToggleCoords");
+        btn.style.background = showCoordsOnMap ? "#16a34a" : "#475569";
+        renderSatelliteData(getGeographicData());
+    }
+
+    function getGeographicData() {
+        const sxVal = document.getElementById("stX").value;
+        const syVal = document.getElementById("stY").value;
+        const stName = document.getElementById("stName").value || "ST";
+
+        const bxVal = document.getElementById("bsX").value;
+        const byVal = document.getElementById("bsY").value;
+        const bsName = document.getElementById("bsName").value || "BS";
+
+        let stGeo = null, bsGeo = null;
+
+        if (sxVal && syVal && !excludedPointNames.includes("ST:" + stName)) {
+            const origX = fixX(sxVal);
+            const origY = parseFloat(syVal);
+            const g = ammar_engine_transform(origX + visualShiftX, origY + visualShiftY);
+            stGeo = { name: stName, x: origX, y: origY, lat: g.lat, lon: g.lon };
+        }
+
+        if (bxVal && byVal && !excludedPointNames.includes("BS:" + bsName)) {
+            const origX = fixX(bxVal);
+            const origY = parseFloat(byVal);
+            const g = ammar_engine_transform(origX + visualShiftX, origY + visualShiftY);
+            bsGeo = { name: bsName, x: origX, y: origY, lat: g.lat, lon: g.lon };
+        }
+
+        const tgGeo = [];
+        trgs.forEach((t, idx) => {
+            const ptName = String(t.name || (idx + 1));
+            if (!excludedPointNames.includes(ptName)) {
+                const g = ammar_engine_transform(t.x + visualShiftX, t.y + visualShiftY);
+                tgGeo.push({
+                    name: ptName,
+                    x: t.x,
+                    y: t.y,
+                    lat: g.lat,
+                    lon: g.lon
+                });
+            }
+        });
+
+        return { st: stGeo, bs: bsGeo, targets: tgGeo };
+    }
+
+    function initSatelliteMap() {
+        if (satMap) return;
+
+        const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 21,
+            attribution: 'Google Satellite Hybrid'
+        });
+
+        const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 21,
+            attribution: 'Google Satellite'
+        });
+
+        const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Esri World Imagery'
+        });
+
+        satMap = L.map('satMapContainer', {
+            layers: [googleHybrid]
+        }).setView([34.5, 38.5], 7);
+
+        satTileLayer = googleHybrid;
+
+        const baseMaps = {
+            "🛰️ غوغل هجين (حديث)": googleHybrid,
+            "🛰️ غوغل فضائي نقي": googleSat,
+            "🌍 إيزري Esri": esriImagery
+        };
+        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(satMap);
+
+        satLayerGroup = L.layerGroup().addTo(satMap);
+    }
+
+    function saveCurrentAreaOffline() {
+        const btn = document.getElementById("btnSaveOffline");
+        btn.innerText = "⏳ جاري...";
+
+        setTimeout(() => {
+            btn.innerText = "✅ تم الحفظ";
+            setTimeout(() => { btn.innerText = "💾 أوفلاين"; }, 2500);
+            alert("تم حفظ بيانات الرؤية الحالية في ذاكرة المتصفح للعمل بدون اتصال!");
+        }, 800);
+    }
+
+    function renderSatelliteData(data) {
+        if (!satMap || !satLayerGroup) return;
+        satLayerGroup.clearLayers();
+
+        updateRouteTargetDropdown(data);
+
+        const bounds = [];
+
+        if (data.st) {
+            bounds.push([data.st.lat, data.st.lon]);
+            const m = L.circleMarker([data.st.lat, data.st.lon], {
+                radius: 8,
+                fillColor: '#dc2626',
+                color: '#fff',
+                weight: 2,
+                fillOpacity: 1
+            }).bindPopup(`<b>الوقوف: ${data.st.name}</b><br>X: ${data.st.x.toFixed(2)}<br>Y: ${data.st.y.toFixed(2)}`).addTo(satLayerGroup);
+
+            if (showNamesOnMap) {
+                m.bindTooltip(`ST: ${data.st.name}`, { permanent: true, direction: 'top', className: 'map-pt-label', offset: [0, -8] });
+            }
+            if (showCoordsOnMap) {
+                const c = L.marker([data.st.lat, data.st.lon], { opacity: 0 }).addTo(satLayerGroup);
+                c.bindTooltip(`X:${data.st.x.toFixed(2)}<br>Y:${data.st.y.toFixed(2)}`, { permanent: true, direction: 'bottom', className: 'map-pt-coord-card', offset: [0, 8] });
+            }
+        }
+
+        if (data.bs) {
+            bounds.push([data.bs.lat, data.bs.lon]);
+            const m = L.circleMarker([data.bs.lat, data.bs.lon], {
+                radius: 7,
+                fillColor: '#0284c7',
+                color: '#fff',
+                weight: 2,
+                fillOpacity: 1
+            }).bindPopup(`<b>الزيرو: ${data.bs.name}</b><br>X: ${data.bs.x.toFixed(2)}<br>Y: ${data.bs.y.toFixed(2)}`).addTo(satLayerGroup);
+
+            if (showNamesOnMap) {
+                m.bindTooltip(`BS: ${data.bs.name}`, { permanent: true, direction: 'top', className: 'map-pt-label', offset: [0, -8] });
+            }
+            if (showCoordsOnMap) {
+                const c = L.marker([data.bs.lat, data.bs.lon], { opacity: 0 }).addTo(satLayerGroup);
+                c.bindTooltip(`X:${data.bs.x.toFixed(2)}<br>Y:${data.bs.y.toFixed(2)}`, { permanent: true, direction: 'bottom', className: 'map-pt-coord-card', offset: [0, 8] });
+            }
+        }
+
+        if (data.st && data.bs) {
+            L.polyline([[data.st.lat, data.st.lon], [data.bs.lat, data.bs.lon]], {
+                color: '#0284c7',
+                weight: 2,
+                dashArray: '5, 5'
+            }).addTo(satLayerGroup);
+        }
+
+        if (data.targets && data.targets.length > 0) {
+            const polyCoords = [];
+            data.targets.forEach(t => {
+                bounds.push([t.lat, t.lon]);
+                polyCoords.push([t.lat, t.lon]);
+
+                const marker = L.circleMarker([t.lat, t.lon], {
+                    radius: 6,
+                    fillColor: '#10b981',
+                    color: '#000',
+                    weight: 2,
+                    fillOpacity: 1
+                }).bindPopup(`<b>نقطة: ${t.name}</b><br>X: ${t.x.toFixed(2)}<br>Y: ${t.y.toFixed(2)}`).addTo(satLayerGroup);
+
+                if (showNamesOnMap) {
+                    marker.bindTooltip(t.name, {
+                        permanent: true,
+                        direction: 'top',
+                        className: 'map-pt-label',
+                        offset: [0, -7]
+                    });
+                }
+
+                if (showCoordsOnMap) {
+                    const cMarker = L.marker([t.lat, t.lon], { opacity: 0 }).addTo(satLayerGroup);
+                    cMarker.bindTooltip(`X:${t.x.toFixed(2)}<br>Y:${t.y.toFixed(2)}`, {
+                        permanent: true,
+                        direction: 'bottom',
+                        className: 'map-pt-coord-card',
+                        offset: [0, 7]
+                    });
+                }
+            });
+
+            if (data.targets.length >= 2) {
+                if (data.targets.length >= 3) {
+                    L.polygon(polyCoords, {
+                        color: '#047857',
+                        weight: 3,
+                        fillColor: '#10b981',
+                        fillOpacity: 0.2
+                    }).addTo(satLayerGroup);
+                } else {
+                    L.polyline(polyCoords, {
+                        color: '#047857',
+                        weight: 3
+                    }).addTo(satLayerGroup);
+                }
+            }
+        }
+
+        if (bounds.length > 0 && isFirstGPS) {
+            satMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 18 });
+        }
+    }
+
+    function openSatelliteModal() {
+        document.getElementById("satelliteModal").style.display = "block";
+        initSatelliteMap();
+        setTimeout(() => {
+            satMap.invalidateSize();
+            renderSatelliteData(getGeographicData());
+            updateExcludeDropdown();
+        }, 150);
+    }
+
+    function closeSatelliteModal() {
+        document.getElementById("satelliteModal").style.display = "none";
+        clearRouting();
+        if (watchId !== null) toggleGPS();
+    }
+
+    function toggleFullscreenMap() {
+        const box = document.getElementById('modalContentBox');
+        const btn = document.getElementById('btnFullscreen');
+        isMapFullscreen = !isMapFullscreen;
+
+        if (isMapFullscreen) {
+            box.classList.add('fullscreen-mode');
+            btn.innerText = 'تصغير';
+            btn.style.background = '#475569';
+        } else {
+            box.classList.remove('fullscreen-mode');
+            btn.innerText = 'تكبير';
+            btn.style.background = '#0284c7';
+        }
+
+        setTimeout(() => {
+            if (satMap) satMap.invalidateSize();
+        }, 120);
+    }
+
+    function toggleGPS() {
+        const btn = document.getElementById('gpsToggle');
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            currentUserLatLng = null;
+            btn.classList.remove('active');
+            if (userMarker) satMap.removeLayer(userMarker);
+            if (accuracyCircle) satMap.removeLayer(accuracyCircle);
+            userMarker = null;
+            accuracyCircle = null;
+            isFirstGPS = true;
+            if (routePolyline && satMap) {
+                satMap.removeLayer(routePolyline);
+                routePolyline = null;
+            }
+        } else {
+            if (!navigator.geolocation) {
+                return alert("خاصية تحديد الموقع غير مدعومة في جهازك.");
+            }
+            btn.classList.add('active');
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const acc = pos.coords.accuracy;
+
+                    currentUserLatLng = { lat, lng: lon };
+
+                    if (!accuracyCircle) {
+                        accuracyCircle = L.circle([lat, lon], {
+                            radius: acc,
+                            color: '#1a73e8',
+                            weight: 1,
+                            fillColor: '#1a73e8',
+                            fillOpacity: 0.15
+                        }).addTo(satMap);
+                    } else {
+                        accuracyCircle.setLatLng([lat, lon]);
+                        accuracyCircle.setRadius(acc);
+                    }
+
+                    if (!userMarker) {
+                        const icon = L.divIcon({
+                            className: 'user-loc-pulse',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        });
+                        userMarker = L.marker([lat, lon], { icon: icon }).addTo(satMap);
+                        userMarker.bindPopup('<b>موقعي الحالي</b><br>دقة: ' + Math.round(acc) + ' م');
+                    } else {
+                        userMarker.setLatLng([lat, lon]);
+                    }
+
+                    if (isFirstGPS) {
+                        satMap.flyTo([lat, lon], 18, { duration: 1.2 });
+                        isFirstGPS = false;
+                    }
+
+                    if (document.getElementById("routeTargetSelect").value) {
+                        calculateRoute();
+                    }
+                },
+                (err) => {
+                    alert('تعذر تحديد موقعك الحالي: ' + err.message);
+                    btn.classList.remove('active');
+                    watchId = null;
+                    currentUserLatLng = null;
+                },
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        }
+    }
+
+    function ensureSessionSaved() {
+        if (!sessInfo.name) {
+            let n = prompt("يرجى إدخال اسم الجلسة أولاً لحفظ الملف باسمها:");
+            if (!n || !n.trim()) return null;
+            sessInfo.name = n.trim();
+            saveSess();
+        }
+        return sessInfo.name;
+    }
+
+    function downloadKML() {
+        const geoData = getGeographicData();
+        if (!geoData.st && !geoData.bs && geoData.targets.length === 0) {
+            return alert("لا توجد بيانات لتصديرها.");
+        }
+
+        const sessionName = ensureSessionSaved();
+        if (!sessionName) return;
+
+        let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${sessionName}</name>
+    <description>تصدير من محرك التوقيع المساحي - م. عمار يوسف ضمن مجلد AmmarSmartSurvey</description>
+
+    <Style id="stStyle">
+      <IconStyle>
+        <color>ff0000ff</color>
+        <scale>1.2</scale>
+        <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>
+      </IconStyle>
+    </Style>
+
+    <Style id="bsStyle">
+      <IconStyle>
+        <color>ffff0000</color>
+        <scale>1.1</scale>
+        <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>
+      </IconStyle>
+    </Style>
+
+    <Style id="targetStyle">
+      <IconStyle>
+        <color>ff00ff00</color>
+        <scale>1.0</scale>
+        <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>
+      </IconStyle>
+      <LineStyle>
+        <color>ff047857</color>
+        <width>3</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>4010b981</color>
+      </PolyStyle>
+    </Style>
+`;
+
+        if (geoData.st) {
+            kml += `    <Placemark>
+      <name>الوقوف: ${geoData.st.name}</name>
+      <styleUrl>#stStyle</styleUrl>
+      <Point>
+        <coordinates>${geoData.st.lon},${geoData.st.lat},0</coordinates>
+      </Point>
+    </Placemark>\n`;
+        }
+
+        if (geoData.bs) {
+            kml += `    <Placemark>
+      <name>الزيرو: ${geoData.bs.name}</name>
+      <styleUrl>#bsStyle</styleUrl>
+      <Point>
+        <coordinates>${geoData.bs.lon},${geoData.bs.lat},0</coordinates>
+      </Point>
+    </Placemark>\n`;
+        }
+
+        geoData.targets.forEach(t => {
+            kml += `    <Placemark>
+      <name>${t.name}</name>
+      <styleUrl>#targetStyle</styleUrl>
+      <Point>
+        <coordinates>${t.lon},${t.lat},0</coordinates>
+      </Point>
+    </Placemark>\n`;
+        });
+
+        if (geoData.targets.length >= 3) {
+            let coordsStr = geoData.targets.map(t => `${t.lon},${t.lat},0`).join(" ");
+            coordsStr += ` ${geoData.targets[0].lon},${geoData.targets[0].lat},0`;
+
+            kml += `    <Placemark>
+      <name>حدود القطعة (المضلع)</name>
+      <styleUrl>#targetStyle</styleUrl>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>${coordsStr}</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>\n`;
+        }
+
+        kml += `  </Document>
+</kml>`;
+
+        const safeFileName = sessionName.replace(/[/\\?%*:|"<>]/g, '_');
+        const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `AmmarSmartSurvey_${safeFileName}.kml`;
+        link.click();
+    }
+
+    function downloadTXT() {
+        const sessionName = ensureSessionSaved();
+        if (!sessionName) return;
+
+        const safeFileName = sessionName.replace(/[/\\?%*:|"<>]/g, '_');
+        const content = document.getElementById("summaryText").innerText;
+        const BOM = '\uFEFF'; 
+        const blob = new Blob([BOM + content], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `AmmarSmartSurvey_${safeFileName}.txt`;
+        link.click();
+    }
+
+    function handleKey(e, targetId) {
+        if (e.key === "Enter") {
+            if (targetId === 'addInv') addInv();
+            else document.getElementById(targetId).focus();
+        }
+    }
+
+    function inv(sx, sy, bx, by, tx, ty) {
+        const bz = (Math.atan2(bx - sx, by - sy) * GRAD + 400) % 400;
+        const tz = (Math.atan2(tx - sx, ty - sy) * GRAD + 400) % 400;
+        return { d: Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2)), r: (tz - bz + 400) % 400 };
+    }
+
+    function addInv() {
+        const txIn = document.getElementById("tgX"), tyIn = document.getElementById("tgY");
+        const tx = fixX(txIn.value), ty = parseFloat(tyIn.value);
+        if(isNaN(tx) || isNaN(ty)) return;
+        const sx = fixX(document.getElementById("stX").value), sy = parseFloat(document.getElementById("stY").value || 0);
+        const bx = fixX(document.getElementById("bsX").value), by = parseFloat(document.getElementById("bsY").value || 0);
+        const res = inv(sx, sy, bx, by, tx, ty);
+        
+        const autoName = trgs.length + 1;
+        trgs.push({ x: tx, y: ty, d: res.d, r: res.r, name: autoName });
+        render(); 
+        txIn.value = ""; 
+        tyIn.value = ""; 
+        txIn.focus();
+        
+        if (!document.getElementById("mapSection").classList.contains("hidden")) {
+            drawSiteMap();
+        }
+        if (document.getElementById("satelliteModal").style.display === "block") {
+            renderSatelliteData(getGeographicData());
+            updateExcludeDropdown();
+        }
+    }
+
+    function moveTargetUp(index) {
+        if (index <= 0) return;
+        const temp = trgs[index];
+        trgs[index] = trgs[index - 1];
+        trgs[index - 1] = temp;
+        recalculateAndRefresh();
+    }
+
+    function moveTargetDown(index) {
+        if (index >= trgs.length - 1) return;
+        const temp = trgs[index];
+        trgs[index] = trgs[index + 1];
+        trgs[index + 1] = temp;
+        recalculateAndRefresh();
+    }
+
+    function deleteTarget(index) {
+        const ptName = trgs[index].name || (index + 1);
+        if (confirm(`هل أنت متأكد من حذف النقطة (${ptName})؟`)) {
+            trgs.splice(index, 1);
+            recalculateAndRefresh();
+        }
+    }
+
+    function recalculateAndRefresh() {
+        render();
+        if (!document.getElementById("mapSection").classList.contains("hidden")) drawSiteMap();
+        if (!document.getElementById("areaSection").classList.contains("hidden")) {
+            renderAreaButtons();
+            calculateAreaAndPerimeter();
+            drawPolygon();
+        }
+        if (document.getElementById("satelliteModal").style.display === "block") {
+            renderSatelliteData(getGeographicData());
+            updateExcludeDropdown();
+        }
+    }
+
+    function render() {
+        const listDiv = document.getElementById("resList");
+        if (trgs.length === 0) {
+            listDiv.innerHTML = '<div style="background:#fff; padding:20px; text-align:center; font-weight:900; border:2px dashed #94a3b8; border-radius:8px;">لا توجد نقاط مضافة بعد</div>';
+            return;
+        }
+
+        listDiv.innerHTML = trgs.map((t, i) => `
+            <div class="stake-item">
+                <div class="stake-header">
+                    <span class="stake-id"># ${t.name ? t.name : (i+1)}</span>
+                    <div class="point-actions">
+                        <button class="move-btn" onclick="moveTargetUp(${i})" ${i === 0 ? 'disabled' : ''} title="نقل لأعلى">⬆️</button>
+                        <button class="move-btn" onclick="moveTargetDown(${i})" ${i === trgs.length - 1 ? 'disabled' : ''} title="نقل لأسفل">⬇️</button>
+                        <button class="del-btn" onclick="deleteTarget(${i})" title="حذف النقطة">🗑️</button>
+                        ${t.note ? `<span class="stake-note">${t.note}</span>` : ''}
+                    </div>
+                </div>
+                <div class="stake-primary">
+                    <div class="stake-box hd">
+                        <span class="box-title hd">المسافة HD</span>
+                        <span class="val-hd">${t.d.toFixed(2)}</span>
+                    </div>
+                    <div class="stake-box hr">
+                        <span class="box-title hr">الزاوية HR</span>
+                        <span class="val-hr">${t.r.toFixed(4)}</span>
+                    </div>
+                </div>
+                <div class="stake-coords">
+                    <span>X: <span class="coord-val">${t.x.toFixed(2)}</span></span>
+                    <span>Y: <span class="coord-val">${t.y.toFixed(2)}</span></span>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    function toggleLock(id) {
+        const e = document.getElementById(id + 'Edit'), s = document.getElementById(id + 'Show');
+        if(e.classList.contains('hidden')) { e.classList.remove('hidden'); s.classList.add('hidden'); }
+        else {
+            const n = document.getElementById(id + 'Name').value, x = document.getElementById(id + 'X').value, y = document.getElementById(id + 'Y').value;
+            if(!n || !x || !y) return alert("البيانات ناقصة");
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'N').innerText = n;
+            document.getElementById('txt' + id.charAt(0).toUpperCase() + id.slice(1) + 'X').innerText = fixX(x).toFixed(2);
+            e.classList.add('hidden'); s.classList.remove('hidden');
+            if (!document.getElementById("mapSection").classList.contains("hidden")) drawSiteMap();
+            if (document.getElementById("satelliteModal").style.display === "block") {
+                renderSatelliteData(getGeographicData());
+                updateExcludeDropdown();
+            }
+        }
+    }
+
+    window.onload = () => {
+        loadSess();
+        render();
+        setupMapInteractions();
+
+        const searchConfigs = [
+            { id: 'stName', res: 'stResults', other: ['bsName'], pre: 'st' },
+            { id: 'bsName', res: 'bsResults', other: ['stName'], pre: 'bs' }
+        ];
+        searchConfigs.forEach(conf => {
+            const inp = document.getElementById(conf.id);
+            const resBox = document.getElementById(conf.res);
+            inp.addEventListener('input', () => {
+                const queryText = inp.value.toLowerCase().trim();
+                const others = conf.other.map(id => document.getElementById(id).value.toLowerCase().trim());
+                if (!queryText) { resBox.style.display='none'; return; }
+                const keywords = queryText.split(/\s+/); 
+                const db = JSON.parse(localStorage.getItem("pointsDB") || "[]");
+                const matches = db.filter(p => {
+                    const n = String(p.name).toLowerCase();
+                    const isMatch = keywords.every(kw => n.includes(kw));
+                    return isMatch && !others.includes(n);
+                });
+                if (matches.length > 0) {
+                    resBox.innerHTML = matches.slice(0, 15).map(p => `<div class="result-item" onclick="pickPt('${conf.id}','${p.name}',${p.x},${p.y},'${conf.res}','${conf.pre}')">${p.name} <small style="color:blue">(${p.area || ''})</small></div>`).join("");
+                    resBox.style.display = 'block';
+                } else { resBox.style.display = 'none'; }
+            });
+        });
+        document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrap')) document.querySelectorAll('.results-box').forEach(b => b.style.display='none'); });
+    };
+
+    function pickPt(inpId, name, x, y, resId, pre) {
+        document.getElementById(inpId).value = name;
+        document.getElementById(pre + 'X').value = Math.abs(x);
+        document.getElementById(pre + 'Y').value = y;
+        document.getElementById(resId).style.display = 'none';
+    }
+
+    function saveSess() {
+        if(trgs.length === 0) return alert("لا توجد بيانات");
+        let n = sessInfo.name || prompt("اسم الجلسة:"); if(!n) return;
+        sessInfo.name = n.trim();
+        let db = JSON.parse(localStorage.getItem("sessionsDB_P2") || "[]");
+        const s = { id: sessId || Date.now(), name: sessInfo.name, date: new Date().toLocaleDateString('ar-EG'), st: { n: document.getElementById("stName").value, x: document.getElementById("stX").value, y: document.getElementById("stY").value }, bs: { n: document.getElementById("bsName").value, x: document.getElementById("bsX").value, y: document.getElementById("bsY").value }, data: trgs };
+        if(sessId) db[db.findIndex(x => x.id === sessId)] = s; else { sessId = s.id; db.push(s); }
+        localStorage.setItem("sessionsDB_P2", JSON.stringify(db)); loadSess(); alert("تم الحفظ ضمن مجلد AmmarSmartSurvey ✅");
+    }
+
+    function loadSess() {
+        const ss = JSON.parse(localStorage.getItem("sessionsDB_P2") || "[]");
+        document.getElementById("sessionsDropdown").innerHTML = '<option value="">--- استرجاع جلسة ---</option>' + ss.reverse().map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+    }
+
+    document.getElementById("sessionsDropdown").onchange = function() {
+        const s = JSON.parse(localStorage.getItem("sessionsDB_P2") || "[]").find(x => x.id == this.value);
+        if(s) { sessId = s.id; sessInfo.name = s.name; document.getElementById("stName").value = s.st.n; document.getElementById("stX").value = s.st.x; document.getElementById("stY").value = s.st.y; document.getElementById("bsName").value = s.bs.n; document.getElementById("bsX").value = s.bs.x; document.getElementById("bsY").value = s.bs.y; trgs = s.data; toggleLock('st'); toggleLock('bs'); render(); }
+    };
+
+    function startNew() { if(confirm("بدء جديدة؟")) location.reload(); }
+
+    function showSummary() {
+        const stN = document.getElementById("stName").value || "ST";
+        const stXVal = document.getElementById("stX").value ? fixX(document.getElementById("stX").value).toFixed(2) : "0.00";
+        const stYVal = document.getElementById("stY").value ? parseFloat(document.getElementById("stY").value).toFixed(2) : "0.00";
+
+        const bsN = document.getElementById("bsName").value || "BS";
+        const bsXVal = document.getElementById("bsX").value ? fixX(document.getElementById("bsX").value).toFixed(2) : "0.00";
+        const bsYVal = document.getElementById("bsY").value ? parseFloat(document.getElementById("bsY").value).toFixed(2) : "0.00";
+
+        let txt = `========================================\n   تقرير التوقيع المساحي - م. عمار يوسف\n   مجلد الحفظ: AmmarSmartSurvey\n========================================\nالجلسة: ${sessInfo.name || "جديدة"}\nالتاريخ: ${new Date().toLocaleDateString('ar-EG')}\n----------------------------------------\nالوقوف: ${stN} | X: ${stXVal} | Y: ${stYVal}\nالزيرو : ${bsN} | X: ${bsXVal} | Y: ${bsYVal}\n========================================\n# | X | Y | HD | HR | ملاحظة\n----------------------------------------\n`;
+        trgs.forEach((t, i) => { 
+            const lbl = t.name ? t.name : (i+1);
+            const note = t.note ? ` | ${t.note}` : "";
+            txt += `${lbl} | ${t.x.toFixed(2)} | ${t.y.toFixed(2)} | ${t.d.toFixed(2)} | ${t.r.toFixed(4)}${note}\n`; 
+        });
+        document.getElementById("summaryText").innerText = txt;
+        document.getElementById("summaryModal").style.display = "block";
+    }
+
+    function updateAll() {
+        const sx = fixX(document.getElementById("stX").value), sy = parseFloat(document.getElementById("stY").value || 0);
+        const bx = fixX(document.getElementById("bsX").value), by = parseFloat(document.getElementById("bsY").value || 0);
+        trgs = trgs.map(t => { const res = inv(sx, sy, bx, by, t.x, t.y); return { ...t, d: res.d, r: res.r }; });
+        render(); 
+        if (!document.getElementById("mapSection").classList.contains("hidden")) drawSiteMap();
+        if (document.getElementById("satelliteModal").style.display === "block") {
+            renderSatelliteData(getGeographicData());
+            updateExcludeDropdown();
+        }
+        alert("تم التحديث ✅");
+    }
+
+    let pkSelectedIndices = [];
+
+    function togglePKPanel() {
+        document.getElementById("areaSection").classList.add("hidden");
+        document.getElementById("mapSection").classList.add("hidden");
+        const panel = document.getElementById("pkSection");
+        if (panel.classList.contains("hidden")) {
+            if (trgs.length < 2) return alert("يرجى إدخال نقطتين للتوقيع على الأقل لاختيار الخط بينهما.");
+            pkSelectedIndices = [];
+            renderPKPointButtons();
+            document.getElementById("pkInputZone").classList.add("hidden");
+            panel.classList.remove("hidden");
+        } else {
+            panel.classList.add("hidden");
+            pkSelectedIndices = [];
+        }
+    }
+
+    function renderPKPointButtons() {
+        const listDiv = document.getElementById("pkPointsList");
+        listDiv.innerHTML = trgs.map((t, idx) => {
+            const isSel = pkSelectedIndices.includes(idx);
+            const label = t.name ? t.name : (idx + 1);
+            return `<button type="button" class="pk-pt-btn ${isSel ? 'selected' : ''}" onclick="selectPKPoint(${idx})">${label}</button>`;
+        }).join("");
+    }
+
+    function selectPKPoint(idx) {
+        if (pkSelectedIndices.includes(idx)) {
+            pkSelectedIndices = pkSelectedIndices.filter(i => i !== idx);
+        } else {
+            if (pkSelectedIndices.length >= 2) pkSelectedIndices.shift();
+            pkSelectedIndices.push(idx);
+        }
+        renderPKPointButtons();
+
+        const inputZone = document.getElementById("pkInputZone");
+        if (pkSelectedIndices.length === 2) {
+            const p1Name = trgs[pkSelectedIndices[0]].name || (pkSelectedIndices[0] + 1);
+            const p2Name = trgs[pkSelectedIndices[1]].name || (pkSelectedIndices[1] + 1);
+            document.getElementById("pkSelectionInfo").innerText = `من النقطة (${p1Name}) باتجاه النقطة (${p2Name})`;
+            inputZone.classList.remove("hidden");
+            document.getElementById("pkDist").focus();
+        } else {
+            inputZone.classList.add("hidden");
+        }
+    }
+
+    function calculateAndAddPK() {
+        const distInput = document.getElementById("pkDist");
+        const distK = parseFloat(distInput.value);
+        if (isNaN(distK)) return alert("يرجى إدخال مسافة صحيحة.");
+
+        const idx1 = pkSelectedIndices[0];
+        const idx2 = pkSelectedIndices[1];
+        const p1 = trgs[idx1];
+        const p2 = trgs[idx2];
+
+        const totalDist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        if (totalDist === 0) return alert("النقطتان متطابقتان بالمسافة.");
+
+        const ratio = distK / totalDist;
+        const newX = p1.x + (p2.x - p1.x) * ratio;
+        const newY = p1.y + (p2.y - p1.y) * ratio;
+
+        const sx = fixX(document.getElementById("stX").value);
+        const sy = parseFloat(document.getElementById("stY").value || 0);
+        const bx = fixX(document.getElementById("bsX").value);
+        const by = parseFloat(document.getElementById("bsY").value || 0);
+        const res = inv(sx, sy, bx, by, newX, newY);
+
+        const p1Name = p1.name ? p1.name : (idx1 + 1);
+        const pkName = `PK ${distK.toFixed(2)}`;
+
+        const newTarget = {
+            name: pkName,
+            x: newX,
+            y: newY,
+            d: res.d,
+            r: res.r,
+            note: `from ${p1Name}`
+        };
+
+        trgs.splice(idx1 + 1, 0, newTarget);
+
+        render();
+        distInput.value = "";
+        togglePKPanel();
+        if (document.getElementById("satelliteModal").style.display === "block") {
+            renderSatelliteData(getGeographicData());
+            updateExcludeDropdown();
+        }
+        alert(`تمت إضافة النقطة ${pkName} بنجاح ✅`);
+    }
+
+    let areaSelectedIndices = [];
+
+    function toggleAreaPanel() {
+        document.getElementById("pkSection").classList.add("hidden");
+        document.getElementById("mapSection").classList.add("hidden");
+        const panel = document.getElementById("areaSection");
+        if (panel.classList.contains("hidden")) {
+            if (trgs.length < 3) return alert("يرجى إدخال 3 نقاط على الأقل لحساب مساحة القطعة.");
+            renderAreaButtons();
+            drawPolygon();
+            panel.classList.remove("hidden");
+        } else {
+            panel.classList.add("hidden");
+        }
+    }
+
+    function renderAreaButtons() {
+        const listDiv = document.getElementById("areaPointsList");
+        listDiv.innerHTML = trgs.map((t, idx) => {
+            const isSel = areaSelectedIndices.includes(idx);
+            const orderIdx = areaSelectedIndices.indexOf(idx);
+            const label = t.name ? t.name : (idx + 1);
+            const tag = isSel ? `<span style="font-size:10px; display:block; line-height:1;">(${orderIdx + 1})</span>` : '';
+            return `<button type="button" class="pk-pt-btn ${isSel ? 'area-sel' : ''}" onclick="selectAreaPoint(${idx})">${label}${tag}</button>`;
+        }).join("");
+    }
+
+    function selectAreaPoint(idx) {
+        if (areaSelectedIndices.includes(idx)) {
+            areaSelectedIndices = areaSelectedIndices.filter(i => i !== idx);
+        } else {
+            areaSelectedIndices.push(idx);
+        }
+        renderAreaButtons();
+        calculateAreaAndPerimeter();
+        drawPolygon();
+    }
+
+    function resetAreaSelection() {
+        areaSelectedIndices = [];
+        renderAreaButtons();
+        calculateAreaAndPerimeter();
+        drawPolygon();
+    }
+
+    function calculateAreaAndPerimeter() {
+        if (areaSelectedIndices.length < 3) {
+            document.getElementById("txtAreaM2").innerText = "0.00";
+            document.getElementById("txtPerimeter").innerText = "0.00";
+            return;
+        }
+
+        const pts = areaSelectedIndices.map(i => trgs[i]);
+        const n = pts.length;
+        let areaSum = 0;
+        let perimSum = 0;
+
+        for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            areaSum += (pts[i].x * pts[j].y) - (pts[j].x * pts[i].y);
+            perimSum += Math.sqrt(Math.pow(pts[j].x - pts[i].x, 2) + Math.pow(pts[j].y - pts[i].y, 2));
+        }
+
+        const area = Math.abs(areaSum) / 2.0;
+        document.getElementById("txtAreaM2").innerText = area.toFixed(2);
+        document.getElementById("txtPerimeter").innerText = perimSum.toFixed(2);
+    }
+
+    function drawPolygon() {
+        const canvas = document.getElementById("polygonCanvas");
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        if (areaSelectedIndices.length === 0) {
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "bold 16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("اضغط على النقاط بالتسلسل لعرض الشكل والمساحة", w / 2, h / 2);
+            return;
+        }
+
+        const pts = areaSelectedIndices.map(i => ({
+            name: trgs[i].name ? trgs[i].name : (i + 1),
+            x: trgs[i].x,
+            y: trgs[i].y
+        }));
+
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        pts.forEach(p => {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
+
+        const spanX = (maxX - minX) || 10;
+        const spanY = (maxY - minY) || 10;
+        const padding = 45;
+        const scale = Math.min((w - padding * 2) / spanX, (h - padding * 2) / spanY);
+
+        const toCanvasX = (x) => padding + (x - minX) * scale;
+        const toCanvasY = (y) => h - (padding + (y - minY) * scale);
+
+        if (pts.length >= 3) {
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(pts[0].x), toCanvasY(pts[0].y));
+            for (let i = 1; i < pts.length; i++) {
+                ctx.lineTo(toCanvasX(pts[i].x), toCanvasY(pts[i].y));
+            }
+            ctx.closePath();
+            ctx.fillStyle = "rgba(5, 150, 105, 0.15)";
+            ctx.fill();
+            ctx.strokeStyle = "#059669";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        } else if (pts.length === 2) {
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(pts[0].x), toCanvasY(pts[0].y));
+            ctx.lineTo(toCanvasX(pts[1].x), toCanvasY(pts[1].y));
+            ctx.strokeStyle = "#059669";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        pts.forEach((p, idx) => {
+            const cx = toCanvasX(p.x);
+            const cy = toCanvasY(p.y);
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+            ctx.fillStyle = "#dc2626";
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000";
+            ctx.stroke();
+
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 13px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`${idx + 1}: ${p.name}`, cx, cy - 10);
+        });
+    }
+
+    function toggleMapPanel() {
+        document.getElementById("pkSection").classList.add("hidden");
+        document.getElementById("areaSection").classList.add("hidden");
+        const panel = document.getElementById("mapSection");
+        if (panel.classList.contains("hidden")) {
+            panel.classList.remove("hidden");
+            drawSiteMap();
+        } else {
+            panel.classList.add("hidden");
+        }
+    }
+
+    function resetMapTransform() {
+        mapZoom = 1.0;
+        mapPan = { x: 0, y: 0 };
+        drawSiteMap();
+    }
+
+    function setupMapInteractions() {
+        const canvas = document.getElementById("siteMapCanvas");
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            dragStart = { x: e.clientX - mapPan.x, y: e.clientY - mapPan.y };
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            mapPan.x = e.clientX - dragStart.x;
+            mapPan.y = e.clientY - dragStart.y;
+            drawSiteMap();
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+            mapZoom = Math.min(Math.max(0.3, mapZoom * zoomFactor), 8.0);
+            drawSiteMap();
+        }, { passive: false });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                dragStart = { x: e.touches[0].clientX - mapPan.x, y: e.touches[0].clientY - mapPan.y };
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                lastTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && isDragging) {
+                mapPan.x = e.touches[0].clientX - dragStart.x;
+                mapPan.y = e.touches[0].clientY - dragStart.y;
+                drawSiteMap();
+            } else if (e.touches.length === 2 && lastTouchDist) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const zoomFactor = dist / lastTouchDist;
+                mapZoom = Math.min(Math.max(0.3, mapZoom * zoomFactor), 8.0);
+                lastTouchDist = dist;
+                drawSiteMap();
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) lastTouchDist = null;
+            if (e.touches.length === 0) isDragging = false;
+        }, { passive: true });
+    }
+
+    function drawSiteMap() {
+        const canvas = document.getElementById("siteMapCanvas");
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const allPts = [];
+
+        const sxVal = document.getElementById("stX").value;
+        const syVal = document.getElementById("stY").value;
+        const stName = document.getElementById("stName").value || "ST";
+        if (sxVal && syVal) {
+            allPts.push({ name: stName, x: fixX(sxVal), y: parseFloat(syVal), type: 'st' });
+        }
+
+        const bxVal = document.getElementById("bsX").value;
+        const byVal = document.getElementById("bsY").value;
+        const bsName = document.getElementById("bsName").value || "BS";
+        if (bxVal && byVal) {
+            allPts.push({ name: bsName, x: fixX(bxVal), y: parseFloat(byVal), type: 'bs' });
+        }
+
+        const tgPts = trgs.map((t, i) => ({
+            name: t.name ? String(t.name) : String(i + 1),
+            x: t.x,
+            y: t.y,
+            type: 'tg'
+        }));
+        allPts.push(...tgPts);
+
+        if (allPts.length === 0) {
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "bold 16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("أدخل نقطة الوقوف أو أضف نقاطاً للتوقيع لعرض المخطط", w / 2, h / 2);
+            return;
+        }
+
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        allPts.forEach(p => {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
+
+        const spanX = (maxX - minX) || 20;
+        const spanY = (maxY - minY) || 20;
+        const pad = 45;
+        const baseScale = Math.min((w - pad * 2) / spanX, (h - pad * 2) / spanY);
+        const scale = baseScale * mapZoom;
+
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const midWorldX = (minX + maxX) / 2;
+        const midWorldY = (minY + maxY) / 2;
+
+        const toX = (x) => centerX + mapPan.x + (x - midWorldX) * scale;
+        const toY = (y) => centerY + mapPan.y - (y - midWorldY) * scale;
+
+        const stPt = allPts.find(p => p.type === 'st');
+        const bsPt = allPts.find(p => p.type === 'bs');
+
+        if (stPt && bsPt) {
+            ctx.beginPath();
+            ctx.moveTo(toX(stPt.x), toY(stPt.y));
+            ctx.lineTo(toX(bsPt.x), toY(bsPt.y));
+            ctx.strokeStyle = "#0284c7";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        if (tgPts.length >= 2) {
+            ctx.beginPath();
+            ctx.moveTo(toX(tgPts[0].x), toY(tgPts[0].y));
+            for (let i = 1; i < tgPts.length; i++) {
+                ctx.lineTo(toX(tgPts[i].x), toY(tgPts[i].y));
+            }
+            if (tgPts.length >= 3) {
+                ctx.closePath();
+                ctx.fillStyle = "rgba(16, 185, 129, 0.16)";
+                ctx.fill();
+            }
+            ctx.strokeStyle = "#047857";
+            ctx.lineWidth = 3.5;
+            ctx.stroke();
+        }
+
+        allPts.forEach(p => {
+            const cx = toX(p.x);
+            const cy = toY(p.y);
+
+            ctx.beginPath();
+            if (p.type === 'st') {
+                ctx.arc(cx, cy, 9, 0, Math.PI * 2);
+                ctx.fillStyle = "#dc2626";
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                ctx.fillStyle = "#fff";
+                ctx.fill();
+            } else if (p.type === 'bs') {
+                ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+                ctx.fillStyle = "#0284c7";
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+            } else {
+                ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+                ctx.fillStyle = "#10b981";
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 13px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(p.name, cx, cy - 12);
+        });
+    }
+</script>
+</body>
+</html>

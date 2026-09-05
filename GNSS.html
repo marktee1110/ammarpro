@@ -122,7 +122,7 @@
 
 <header>
   <a href="index.html" class="btn-nav-home">🏠 الرئيسية</a>
-  <div class="header-title">🛰️ GNSS Live (إحداثيات محلية X, Y)</div>
+  <div class="header-title">🛰️ GNSS Live (نظام عمار المساحي X, Y)</div>
 </header>
 
 <div id="mapWrapper">
@@ -139,11 +139,11 @@
       <div class="coords-vertical-group">
         <div class="coord-box">
           <span class="coord-label">X:</span>
-          <span class="coord-val fix" id="liveLat">--</span>
+          <span class="coord-val fix" id="liveX">--</span>
         </div>
         <div class="coord-box">
           <span class="coord-label">Y:</span>
-          <span class="coord-val fix" id="liveLon">--</span>
+          <span class="coord-val fix" id="liveY">--</span>
         </div>
       </div>
       
@@ -182,23 +182,100 @@
   const TARGET_READINGS = 30;
   let avgTimeoutTimer = null;
 
-  // نظام عمار الأساسي للتحويل المباشر من خطوط الطول والعرض إلى إحداثيات محلية (X, Y)
-  function ammarSystemTransform(lat, lon) {
-    // الاعتماد على مركز نقطة الانطلاق في نظامك
-    const lat0 = 34.1995728;
-    const lon0 = 39.1511562;
+  // دوال محرك عمار المساحي الأصلية (تحويل وعكس)
+  function ammar_engine_transform(rawX, rawY) {
+    const x = -Math.abs(parseFloat(rawX));
+    const y = Math.abs(parseFloat(rawY));
 
-    const dLat = lat - lat0;
-    const dLon = lon - lon0;
+    const x2 = x / 100000.0;
+    const y2 = y / 100000.0;
 
-    // حساب الأمتار بناءً على إسقاط النظام المعتمد لديك
-    const yVal = dLat * 111320 * 0.901919;
-    const xVal = dLon * 111320 * Math.cos(lat0 * Math.PI / 180) * 1.085445;
+    const lat = (
+      34.1995728022708
+      + (-0.000109034258955 * x2)
+      + (0.901919449198777 * y2)
+      + (-0.004804938821993 * Math.pow(x2, 2))
+      + (-0.0000092638803 * x2 * y2)
+      + (-0.0000619942778 * Math.pow(y2, 2))
+      + (-0.0000023827326 * Math.pow(x2, 3))
+      + (-0.0001079065784 * Math.pow(x2, 2) * y2)
+      + (0.0000045190021 * x2 * Math.pow(y2, 2))
+      + (-0.0000188294226 * Math.pow(y2, 3))
+    );
 
-    // إرجاع الإحداثيات بنظام عمار (X سالبة وقيم محلية نظامية)
+    const lon = (
+      39.1511562415421
+      + (1.08544552373339 * x2)
+      + (0.000141152839858 * y2)
+      + (-0.0000227915953 * Math.pow(x2, 2))
+      + (0.01158568614149 * x2 * y2)
+      + (0.0000184425821 * Math.pow(y2, 2))
+      + (-0.0000667439376 * Math.pow(x2, 3))
+      + (0.0171280222 * Math.pow(x2, 2) * y2 * 0.001)
+      + (0.0001975916378 * x2 * Math.pow(y2, 2))
+      + (-0.0000060696491 * Math.pow(y2, 3))
+    );
+
+    return { lat, lon };
+  }
+
+  function ammar_engine_inverse(latTarget, lonTarget) {
+    latTarget = parseFloat(latTarget);
+    lonTarget = parseFloat(lonTarget);
+
+    let x2 = (lonTarget - 39.1511562415421) / 1.08544552373339;
+    let y2 = (latTarget - 34.1995728022708) / 0.901919449198777;
+
+    x2 = Math.min(0, x2);
+    y2 = Math.max(0, y2);
+
+    const maxIterations = 50;
+    const tolerance = 1e-12;
+
+    for (let i = 0; i < maxIterations; i++) {
+      const current = ammar_engine_transform(
+        -x2 * 100000,
+        y2 * 100000
+      );
+
+      const fLat = current.lat - latTarget;
+      const fLon = current.lon - lonTarget;
+
+      if (
+        Math.abs(fLat) < tolerance &&
+        Math.abs(fLon) < tolerance
+      ) {
+        return {
+          x: -x2 * 100000,
+          y: y2 * 100000
+        };
+      }
+
+      const h = 1e-7;
+      const fx = ammar_engine_transform(-(x2 + h) * 100000, y2 * 100000);
+      const fy = ammar_engine_transform(-x2 * 100000, (y2 + h) * 100000);
+
+      const dLatDx = (fx.lat - current.lat) / h;
+      const dLonDx = (fx.lon - current.lon) / h;
+      const dLatDy = (fy.lat - current.lat) / h;
+      const dLonDy = (fy.lon - current.lon) / h;
+
+      const det = dLatDx * dLonDy - dLatDy * dLonDx;
+      if (Math.abs(det) < 1e-15) break;
+
+      const dx = (dLonDy * fLat - dLatDy * fLon) / det;
+      const dy = (-dLonDx * fLat + dLatDx * fLon) / det;
+
+      x2 -= dx;
+      y2 -= dy;
+
+      x2 = Math.min(0, x2);
+      y2 = Math.max(0, y2);
+    }
+
     return {
-      x: -Math.abs(xVal + 300000), // تعديل الإزاحة لتطابق نطاق عملك الميداني
-      y: yVal + 3785000
+      x: -x2 * 100000,
+      y: y2 * 100000
     };
   }
 
@@ -259,7 +336,9 @@
         const acc = pos.coords.accuracy || 1.0;
 
         currentUserLatLng = { lat, lng: lon };
-        const localXY = ammarSystemTransform(lat, lon);
+        
+        // استخدام محرك عمار العكسي المعتمد حصرياً
+        const localXY = ammar_engine_inverse(lat, lon);
 
         if (isAveraging) {
           avgReadings.push({ x: localXY.x, y: localXY.y, alt });
@@ -274,8 +353,8 @@
         if (!isAveraging) {
           lastXStr = localXY.x.toFixed(3);
           lastYStr = localXY.y.toFixed(3);
-          document.getElementById("liveLat").innerText = lastXStr; // سيظهر الإحداثي X هنا
-          document.getElementById("liveLon").innerText = lastYStr; // سيظهر الإحداثي Y هنا
+          document.getElementById("liveX").innerText = lastXStr;
+          document.getElementById("liveY").innerText = lastYStr;
           document.getElementById("liveAlt").innerText = alt.toFixed(1) + "م";
         }
 
@@ -352,8 +431,8 @@
     lastXStr = finalX.toFixed(3);
     lastYStr = finalY.toFixed(3);
 
-    document.getElementById("liveLat").innerText = lastXStr;
-    document.getElementById("liveLon").innerText = lastYStr;
+    document.getElementById("liveX").innerText = lastXStr;
+    document.getElementById("liveY").innerText = lastYStr;
     document.getElementById("liveAlt").innerText = finalAlt.toFixed(1) + "م";
 
     isAveraging = false;
